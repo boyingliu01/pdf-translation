@@ -1,0 +1,10 @@
+{
+  "translation_engine": "openai",
+  "openai_api_key": "test-key-placeholder",
+  "openai_base_url": "https://open.bigmodel.cn/api/paas/v4",
+  "openai_model": "glm-4-flash",
+  "qps": 4,
+  "min_text_length": 5,
+  "debug": false,
+  "custom_system_prompt": null
+}
