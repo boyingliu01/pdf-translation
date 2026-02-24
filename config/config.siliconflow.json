@@ -1,0 +1,10 @@
+{
+  "translation_engine": "openai",
+  "openai_api_key": "your-siliconflow-api-key-here",
+  "openai_base_url": "https://api.siliconflow.cn/v1",
+  "openai_model": "deepseek-ai/DeepSeek-V3",
+  "qps": 4,
+  "min_text_length": 5,
+  "debug": false,
+  "custom_system_prompt": null
+}

@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Claude Code
+.claude/settings.local.json
+
+# IDE
+.vscode/*.code-workspace
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.venv/
+venv/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+nul
+
+# Examples (large files not for repo)
+examples/*.pdf
+examples/*.csv
+examples/!README.md
+
+# Sensitive configs
+# Keep template configs, ignore active ones with real keys
+# config/config.json  # Uncomment if you want to ignore this

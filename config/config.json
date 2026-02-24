@@ -1,0 +1,12 @@
+{
+  "translation_engine": "openai",
+  "openai_api_key": "your-api-key-here",
+  "openai_base_url": "https://ark.cn-beijing.volces.com/api/v3",
+  "openai_model": "doubao-pro-4k",
+  "qps": 4,
+  "min_text_length": 5,
+  "debug": false,
+  "custom_system_prompt": null,
+  "enable_term_extraction": false,
+  "page_markdown": false
+}
