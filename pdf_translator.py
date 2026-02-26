@@ -25,6 +25,70 @@ except ImportError:
     raise
 
 
+def _apply_babeldoc_patch():
+    """
+    应用 babeldoc 补丁，修复控制字符导致JSON解析失败的问题
+
+    这个补丁修复了 babeldoc 中 _clean_json_output 方法没有清理控制字符的问题。
+    控制字符（ASCII 0-31）会导致 JSON 解析失败，触发 fallback 机制，
+    从而导致译文中出现 "th"、"ft" 等残留字符。
+
+    参考: https://github.com/your-repo/pdf-translation/issues/X
+    """
+    try:
+        from babeldoc.format.pdf.document_il.midend import il_translator_llm_only
+
+        # 保存原始方法（如果需要回滚）
+        original_clean_json_output = il_translator_llm_only.ILTranslatorLLMOnly._clean_json_output
+
+        def patched_clean_json_output(self, llm_output: str) -> str:
+            """
+            清理JSON输出，移除包装标签和控制字符
+
+            这个补丁版本添加了控制字符清理功能。
+            """
+            # Clean up JSON output by removing common wrapper tags
+            llm_output = llm_output.strip()
+            if llm_output.startswith("<json>"):
+                llm_output = llm_output[6:]
+            if llm_output.endswith("</json>"):
+                llm_output = llm_output[:-7]
+            if llm_output.startswith("```json"):
+                llm_output = llm_output[7:]
+            if llm_output.startswith("```"):
+                llm_output = llm_output[3:]
+            if llm_output.endswith("```"):
+                llm_output = llm_output[:-3]
+
+            # 移除控制字符（ASCII 0-31，除了换行符、制表符、回车）
+            # 这些控制字符会导致JSON解析失败，触发fallback机制
+            llm_output = ''.join(
+                char for char in llm_output
+                if ord(char) >= 32 or char in '\n\t\r'
+            )
+
+            return llm_output.strip()
+
+        # 应用补丁
+        il_translator_llm_only.ILTranslatorLLMOnly._clean_json_output = patched_clean_json_output
+        logging.getLogger(__name__).info("Successfully applied babeldoc control character patch")
+
+    except ImportError:
+        logging.getLogger(__name__).warning(
+            "Could not apply babeldoc patch: module not found. "
+            "This may cause 'th'/'ft' residual characters in translations."
+        )
+    except Exception as e:
+        logging.getLogger(__name__).warning(
+            f"Could not apply babeldoc patch: {e}. "
+            "This may cause 'th'/'ft' residual characters in translations."
+        )
+
+
+# 在模块加载时自动应用补丁
+_apply_babeldoc_patch()
+
+
 class TranslationResult:
     """翻译结果"""
 
@@ -290,6 +354,56 @@ class PDFTranslator:
                 **kwargs,
             )
         )
+
+
+def clean_json_output(self_or_output, llm_output: str = None) -> str:
+    """
+    清理JSON输出，移除包装标签和控制字符
+
+    可以作为独立函数或实例方法调用：
+    - 作为独立函数: clean_json_output(output_string)
+    - 作为实例方法: self._clean_json_output(output_string)
+
+    Args:
+        self_or_output: 如果作为实例方法调用，这是self；否则是输出字符串
+        llm_output: 如果第一个参数是self，则这是输出字符串
+
+    Returns:
+        清理后的JSON字符串
+
+    Note:
+        控制字符（ASCII 0-31，除了换行符、制表符、回车）会导致JSON解析失败，
+        触发fallback机制，从而导致译文中出现"th"、"ft"等残留字符。
+    """
+    # 处理两种调用方式
+    if llm_output is None:
+        # 作为独立函数调用: clean_json_output(output_string)
+        output = self_or_output
+    else:
+        # 作为实例方法调用: self._clean_json_output(output_string)
+        output = llm_output
+
+    # Clean up JSON output by removing common wrapper tags
+    output = output.strip()
+    if output.startswith("<json>"):
+        output = output[6:]
+    if output.endswith("</json>"):
+        output = output[:-7]
+    if output.startswith("```json"):
+        output = output[7:]
+    if output.startswith("```"):
+        output = output[3:]
+    if output.endswith("```"):
+        output = output[:-3]
+
+    # 移除控制字符（ASCII 0-31，除了换行符、制表符、回车）
+    # 这些控制字符会导致JSON解析失败，触发fallback机制
+    output = ''.join(
+        char for char in output
+        if ord(char) >= 32 or char in '\n\t\r'
+    )
+
+    return output.strip()
 
 
 def create_example_config(output_path: str = "config/config.json"):
