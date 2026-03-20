@@ -37,7 +37,7 @@ examples/!README.md
 
 # Sensitive configs
 # Keep template configs, ignore active ones with real keys
-# config/config.json  # Uncomment if you want to ignore this
+config/config.json
 
 # Internal documentation (not for public)
 docs/OPEN_SOURCE_SUMMARY.md
