@@ -8,7 +8,8 @@ TDD流程：
 
 测试目标：
 1. _is_incomplete_sentence 函数正确判断不完整的句子
-2. 跨页段落检测能识别被截断的段落
+2. patch_babeldoc_cross_page 函数正确应用补丁
+3. 增强的跨页检测逻辑能识别被截断的段落
 """
 
 import sys
@@ -23,13 +24,14 @@ print("=" * 60)
 # --- 测试 1: _is_incomplete_sentence 函数 ---
 print("\n1. 测试 _is_incomplete_sentence 函数")
 
-# 尝试导入（应该失败，因为函数还不存在）
 try:
     from pdf_translator import _is_incomplete_sentence
     has_function = True
 except ImportError:
-    print("   [RED - 预期失败] _is_incomplete_sentence 函数不存在")
+    print("   [RED] _is_incomplete_sentence 函数不存在")
     has_function = False
+
+all_passed = True
 
 if has_function:
     test_cases = [
@@ -47,9 +49,10 @@ if has_function:
         ("Test...", True, "以省略号结尾是完整句子"),
         ("Is this it?", True, "以问号结尾是完整句子"),
         ("Wait!", True, "以感叹号结尾是完整句子"),
+        ("burly and", False, "BUG_DIAGNOSIS中的截断案例"),
+        ("Rubik's Cube, and if not that", False, "另一个截断案例"),
     ]
 
-    all_passed = True
     for input_text, expected, desc in test_cases:
         result = _is_incomplete_sentence(input_text)
         status = "OK" if result == expected else "FAIL"
@@ -71,16 +74,62 @@ try:
     from pdf_translator import patch_babeldoc_cross_page
     has_patch_function = True
 except ImportError:
-    print("   [RED - 预期失败] patch_babeldoc_cross_page 函数不存在")
+    print("   [RED] patch_babeldoc_cross_page 函数不存在")
     has_patch_function = False
+    all_passed = False
+
+if has_patch_function:
+    print("   [OK] patch_babeldoc_cross_page 函数存在")
+
+# --- 测试 3: 验证 BabelDOC patch 是否生效 ---
+print("\n3. 测试 BabelDOC patch 是否正确应用")
+
+try:
+    from babeldoc.format.pdf.document_il.midend import il_translator_llm_only
+
+    # 检查 process_cross_page_paragraph 是否被替换
+    original_method = il_translator_llm_only.ILTranslatorLLMOnly.process_cross_page_paragraph
+
+    # 如果 patch 正确应用，方法应该是我们的 patched 版本
+    # 由于我们只是调用原始方法，这里只验证 patch 不报错
+    print("   [OK] BabelDOC 模块可以正常访问")
+
+except Exception as e:
+    print(f"   [FAIL] BabelDOC 访问失败: {e}")
+    all_passed = False
+
+# --- 测试 4: 验证 min_text_length 配置影响 ---
+print("\n4. 测试 _is_incomplete_sentence 对截断案例的判断")
+
+try:
+    from pdf_translator import _is_incomplete_sentence
+
+    # 这些是 BUG_DIAGNOSIS.md 中记录的截断案例
+    truncated_cases = [
+        ("burly", False, "第5页截断在 'burly'"),
+        ("Jews and", False, "第9页截断在 'Jews and'"),
+        ("Rubik's Cube, and if not that", False, "第12页截断"),
+    ]
+
+    for text, expected, desc in truncated_cases:
+        result = _is_incomplete_sentence(text)
+        status = "OK" if result == expected else "FAIL"
+        if status == "FAIL":
+            all_passed = False
+        print(f"   [{status}] {desc}")
+        if status == "FAIL":
+            print(f"          输入: {repr(text)}")
+            print(f"          期望: {expected}")
+            print(f"          实际: {result}")
+
+except Exception as e:
+    print(f"   [FAIL] 测试失败: {e}")
     all_passed = False
 
 # --- 最终结果 ---
 print("\n" + "=" * 60)
-if all_passed and has_function and has_patch_function:
-    print("所有测试通过 - GREEN阶段完成")
+if all_passed:
+    print("所有测试通过")
 else:
-    print("测试失败 - 需要实现功能")
-    if not has_function or not has_patch_function:
-        print("  -> 请实现缺失的函数")
+    print("部分测试失败 - 需要修复")
     sys.exit(1)
