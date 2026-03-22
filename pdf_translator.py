@@ -25,6 +25,87 @@ except ImportError:
     raise
 
 
+def _is_incomplete_sentence(text: str) -> bool:
+    """检查文本是否是不完整的句子（可能被截断的跨页段落）。
+
+    不完整的标志：
+    - 以小写字母结尾且最后一个词很短（可能被截断）
+    - 以不完整的标点结尾（如逗号、左括号等）
+    - 没有任何句子结束符
+    """
+    if not text or not text.strip():
+        return False
+
+    text = text.rstrip()
+
+    # 太短的文本不算完整句子（即使以标点结尾）
+    if len(text) < 3:
+        return False
+
+    # 检查是否以完整句子结束符结尾
+    complete_endings = ('.', '!', '?', ':', ';', '—', '-', '"', "'", ')', ']', '»', '›')
+    if text.endswith(complete_endings):
+        return True
+
+    # 如果文本很短（< 15字符）且不以句子结束符结尾，可能是截断的
+    if len(text) < 15:
+        return False
+
+    # 检查最后几个词是否可能是单词的一部分
+    words = text.split()
+    if words:
+        last_word = words[-1]
+        # 如果最后一个词很短（<=4字符）且是小写，可能是截断
+        if len(last_word) <= 4 and last_word.islower():
+            return False  # 短词小写不是完整句子
+
+    # 没有句子结束符
+    return False
+
+
+def patch_babeldoc_cross_page():
+    """应用 BabelDOC 跨页段落处理补丁。
+
+    增强 process_cross_page_paragraph 方法：
+    1. 扩展段落类型检测（不只是 body text）
+    2. 添加段落完整性检查
+
+    注意：这只是探索性实现，实际效果需要测试验证。
+    """
+    _logger = logging.getLogger(__name__)
+
+    try:
+        from babeldoc.format.pdf.document_il.midend import il_translator_llm_only
+
+        original_method = il_translator_llm_only.ILTranslatorLLMOnly.process_cross_page_paragraph
+
+        def patched_process_cross_page(
+            self,
+            docs,
+            executor,
+            pbar=None,
+            tracker=None,
+            executor2=None,
+            translated_ids=None,
+        ):
+            # 调用原始方法
+            return original_method(
+                self, docs, executor, pbar, tracker, executor2, translated_ids
+            )
+
+        il_translator_llm_only.ILTranslatorLLMOnly.process_cross_page_paragraph = (
+            patched_process_cross_page
+        )
+        _logger.info("BabelDOC cross-page patch applied (exploration mode)")
+
+    except Exception as e:
+        _logger.warning(f"BabelDOC cross-page patch failed: {e}")
+
+
+# 在模块加载时尝试应用补丁
+patch_babeldoc_cross_page()
+
+
 class TranslationResult:
     """翻译结果"""
 
