@@ -524,11 +524,21 @@ class PDFTranslator:
 
         # 翻译引擎设置
         if self.config.get("translation_engine") == "openai":
-            translate_engine_settings = OpenAISettings(
-                openai_api_key=self.config.get("openai_api_key"),
-                openai_base_url=self.config.get("openai_base_url", "https://api.openai.com/v1"),
-                openai_model=self.config.get("openai_model", "gpt-4o-mini"),
-            )
+            # 优先使用多模型配置的第一个模型
+            if self.fallback_translator:
+                first_model = self.fallback_translator.get_current_model()
+                translate_engine_settings = OpenAISettings(
+                    openai_api_key=first_model.api_key,
+                    openai_base_url=first_model.base_url,
+                    openai_model=first_model.model,
+                )
+            else:
+                # 单模型配置（向后兼容）
+                translate_engine_settings = OpenAISettings(
+                    openai_api_key=self.config.get("openai_api_key"),
+                    openai_base_url=self.config.get("openai_base_url", "https://api.openai.com/v1"),
+                    openai_model=self.config.get("openai_model", "gpt-4o-mini"),
+                )
         else:
             raise ValueError(
                 f"不支持的翻译引擎: {self.config.get('translation_engine')}"
@@ -550,44 +560,79 @@ class PDFTranslator:
             return  # No fallback configured
 
         try:
-            from babeldoc.format.pdf.document_il.midend import il_translator
+            from pdf2zh_next.translator.translator_impl.openai import OpenAITranslator
             from openai import BadRequestError
+            import openai
 
-            original_translate_paragraph = il_translator.ILTranslator.translate_paragraph
+            original_do_llm_translate = OpenAITranslator.do_llm_translate
             fallback_manager = self.fallback_translator  # Capture for closure
+            logger = self.logger  # Capture for closure
 
-            def patched_translate_paragraph(self_il, *args, **kwargs):
-                """Patched translate_paragraph with fallback support."""
+            def patched_do_llm_translate(self_translator, text, rate_limit_params=None):
+                """Patched do_llm_translate with fallback support.
+
+                On BadRequestError (content filter), immediately switch to next model and retry.
+                """
+                current_model_index = fallback_manager.current_index
                 max_attempts = len(fallback_manager.models)
 
                 for attempt in range(max_attempts):
                     try:
-                        result = original_translate_paragraph(self_il, *args, **kwargs)
+                        result = original_do_llm_translate(self_translator, text, rate_limit_params)
                         fallback_manager.record_success()
                         return result
                     except BadRequestError as e:
-                        self.logger.warning(
-                            f"Translation failed with BadRequestError (content filter): {e}"
+                        current_model = fallback_manager.get_current_model()
+                        logger.warning(
+                            f"Model '{current_model.name}/{current_model.model}' rejected content (BadRequestError)"
                         )
-                        if not fallback_manager.record_failure():
-                            raise  # No more models to try
-                        # Update translator settings for new model
-                        self._update_translator_settings(self_il)
-                    except Exception as e:
-                        self.logger.warning(f"Translation failed: {e}")
-                        if not fallback_manager.record_failure():
+
+                        # Try to switch to next model
+                        if fallback_manager.has_more_models():
+                            fallback_manager._switch_to_next_model()
+                            new_model = fallback_manager.get_current_model()
+                            logger.info(f"Switched to fallback model '{new_model.name}/{new_model.model}'")
+                            # Update translator for next attempt
+                            self._update_openai_translator(self_translator)
+                        else:
+                            # No more models to try
+                            logger.error("All fallback models exhausted")
                             raise
-                        self._update_translator_settings(self_il)
+                    except Exception as e:
+                        logger.warning(f"Translation failed: {e}")
+                        if fallback_manager.has_more_models():
+                            fallback_manager._switch_to_next_model()
+                            self._update_openai_translator(self_translator)
+                        else:
+                            raise
 
                 raise RuntimeError("All translation models failed")
 
-            il_translator.ILTranslator.translate_paragraph = patched_translate_paragraph
+            OpenAITranslator.do_llm_translate = patched_do_llm_translate
             self.logger.info("Fallback translation patch applied successfully")
 
         except ImportError as e:
             self.logger.warning(f"Could not apply fallback patch: {e}")
         except Exception as e:
             self.logger.warning(f"Could not apply fallback patch: {e}")
+
+    def _update_openai_translator(self, translator_instance):
+        """Update OpenAI translator instance with current fallback model settings."""
+        if not self.fallback_translator:
+            return
+
+        model_config = self.fallback_translator.get_current_model()
+
+        # Update settings
+        translator_instance.model = model_config.model
+        translator_instance.add_cache_impact_parameters("model", model_config.model)
+
+        # Recreate the client
+        import openai
+        translator_instance.client = openai.OpenAI(
+            base_url=model_config.base_url,
+            api_key=model_config.api_key,
+        )
 
     def _update_translator_settings(self, il_translator_instance):
         """Update translator instance with current fallback model settings."""
