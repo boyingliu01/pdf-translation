@@ -7,7 +7,9 @@ import asyncio
 import json
 import logging
 from pathlib import Path
-from typing import Optional, Dict, Any, Union
+from typing import Optional, Dict, Any, Union, List
+
+from dataclasses import dataclass
 
 # 导入 pdf2zh_next 的相关模块
 try:
@@ -24,6 +26,102 @@ except ImportError:
     print("请先安装依赖: pip install -r requirements.txt")
     raise
 
+
+# =============================================================================
+# Multi-Model Fallback System
+# =============================================================================
+
+@dataclass
+class FallbackModelConfig:
+    """Configuration for a single translation model."""
+    name: str
+    api_key: str
+    base_url: str
+    model: str
+
+
+class FallbackTranslator:
+    """Manages fallback between multiple translation models.
+
+    Tracks consecutive failures and switches to next model when threshold
+    is reached. Logs all switching events for user visibility.
+    """
+
+    def __init__(
+        self,
+        models: List[FallbackModelConfig],
+        consecutive_failures_threshold: int = 3,
+    ):
+        """Initialize with list of model configs.
+
+        Args:
+            models: List of FallbackModelConfig in priority order
+            consecutive_failures_threshold: Number of failures before switching
+        """
+        if not models:
+            raise ValueError("At least one model must be provided")
+
+        self.models = models
+        self.current_index = 0
+        self.consecutive_failures = 0
+        self.consecutive_failures_threshold = consecutive_failures_threshold
+        self.logger = logging.getLogger(__name__)
+
+    def get_current_model(self) -> FallbackModelConfig:
+        """Get the currently active model configuration."""
+        return self.models[self.current_index]
+
+    def record_failure(self) -> bool:
+        """Record a translation failure.
+
+        Returns:
+            True if switched to a new model, False otherwise
+        """
+        self.consecutive_failures += 1
+
+        if self.consecutive_failures >= self.consecutive_failures_threshold:
+            return self._switch_to_next_model()
+
+        return False
+
+    def record_success(self):
+        """Record a successful translation, reset failure counter."""
+        self.consecutive_failures = 0
+
+    def _switch_to_next_model(self) -> bool:
+        """Switch to the next available model.
+
+        Returns:
+            True if switched successfully, False if no more models
+        """
+        if self.current_index >= len(self.models) - 1:
+            self.logger.warning(
+                f"All {len(self.models)} models have failed. "
+                "No more fallback options available."
+            )
+            return False
+
+        old_model = self.get_current_model()
+        self.current_index += 1
+        self.consecutive_failures = 0
+        new_model = self.get_current_model()
+
+        self.logger.warning(
+            f"Model '{old_model.name}/{old_model.model}' failed "
+            f"{self.consecutive_failures_threshold} times consecutively. "
+            f"Switching to '{new_model.name}/{new_model.model}'"
+        )
+
+        return True
+
+    def has_more_models(self) -> bool:
+        """Check if there are more models to fall back to."""
+        return self.current_index < len(self.models) - 1
+
+
+# =============================================================================
+# BabelDOC Patches
+# =============================================================================
 
 def _apply_babeldoc_patch():
     """
