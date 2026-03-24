@@ -37,25 +37,11 @@ python test/test_translate.py
 python test/test_config_creation.py
 python test/test_engines.py
 python test/example_usage.py
+python test/test_final.py
+python test/test_debug.py
+python test/test_fix.py
+python test/test_translate_docs.py
 ```
-
-### Building Windows Executable
-
-The project supports packaging as a standalone Windows executable (.exe).
-
-```bash
-# Quick build (Windows)
-build.bat
-
-# Manual build
-pip install pyinstaller>=6.0.0
-pyinstaller translate_pdf.spec --clean
-
-# Clean build files
-clean.bat
-```
-
-Output: `dist/pdf-translator.exe` with `dist/config/` templates
 
 ## Architecture
 
@@ -79,6 +65,16 @@ All configs are JSON files in `config/` directory, validated by pydantic models 
 - `OpenAISettings` - API configuration
 
 **Important:** Always call `settings.validate_settings()` after creating settings.
+
+### Available Config Templates
+
+The `config/` directory provides multiple configuration templates:
+- `config.example.json` - General configuration example
+- `config.openai.json` - OpenAI configuration template
+- `config.zhipu.json` - ZhipuAI configuration template (recommended, free tier available)
+- `config.siliconflow.json` - SiliconFlow configuration template
+- `config.volcengine.json` - VolcEngine configuration template
+- `config.test.json` - Test configuration
 
 ### Translation Engine Abstraction
 
@@ -110,12 +106,12 @@ if progress_callback:
     progress_callback(event)
 ```
 
-### Code Style (from AGENTS.md)
+### Code Style
 
 - Python 3.13+
 - Import order: stdlib, third-party, local
 - Classes: PascalCase, Functions: snake_case, Private methods: _prefix
-- Type hints required for all function signatures
+- Type hints required: use `typing` module
 - Use `pathlib.Path` for file operations
 - f-strings for string formatting
 - Logging with timestamp format
