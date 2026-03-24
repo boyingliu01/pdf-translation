@@ -399,6 +399,43 @@ class TranslationResult:
   Memory: {self.peak_memory_usage:.2f}"""
 
 
+def parse_fallback_config(config: Dict[str, Any]) -> Optional[FallbackTranslator]:
+    """Parse fallback configuration from config dict.
+
+    Args:
+        config: Configuration dictionary
+
+    Returns:
+        FallbackTranslator if multi-model config, None otherwise
+    """
+    models_config = config.get("models")
+
+    if not models_config:
+        # Single model mode - use backward compatible config
+        return None
+
+    if not isinstance(models_config, list) or len(models_config) == 0:
+        raise ValueError("'models' must be a non-empty list")
+
+    models = []
+    for m in models_config:
+        if not all(k in m for k in ["api_key", "base_url", "model"]):
+            raise ValueError(
+                "Each model must have 'api_key', 'base_url', and 'model' fields"
+            )
+        models.append(FallbackModelConfig(
+            name=m.get("name", m["model"]),
+            api_key=m["api_key"],
+            base_url=m["base_url"],
+            model=m["model"],
+        ))
+
+    fallback_config = config.get("fallback", {})
+    threshold = fallback_config.get("consecutive_failures", 3)
+
+    return FallbackTranslator(models, threshold)
+
+
 class PDFTranslator:
     """PDF翻译器"""
 
@@ -428,6 +465,13 @@ class PDFTranslator:
             format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         )
         self.logger = logging.getLogger(__name__)
+
+        # Parse fallback configuration
+        self.fallback_translator = parse_fallback_config(self.config)
+        if self.fallback_translator:
+            self.logger.info(
+                f"Multi-model fallback configured with {len(self.fallback_translator.models)} models"
+            )
 
     def _create_settings(
         self,
@@ -500,6 +544,72 @@ class PDFTranslator:
 
         return settings
 
+    def _apply_fallback_patch(self):
+        """Apply patch to intercept translation failures and trigger fallback."""
+        if not self.fallback_translator:
+            return  # No fallback configured
+
+        try:
+            from babeldoc.format.pdf.document_il.midend import il_translator
+            from openai import BadRequestError
+
+            original_translate_paragraph = il_translator.ILTranslator.translate_paragraph
+            fallback_manager = self.fallback_translator  # Capture for closure
+
+            def patched_translate_paragraph(self_il, *args, **kwargs):
+                """Patched translate_paragraph with fallback support."""
+                max_attempts = len(fallback_manager.models)
+
+                for attempt in range(max_attempts):
+                    try:
+                        result = original_translate_paragraph(self_il, *args, **kwargs)
+                        fallback_manager.record_success()
+                        return result
+                    except BadRequestError as e:
+                        self.logger.warning(
+                            f"Translation failed with BadRequestError (content filter): {e}"
+                        )
+                        if not fallback_manager.record_failure():
+                            raise  # No more models to try
+                        # Update translator settings for new model
+                        self._update_translator_settings(self_il)
+                    except Exception as e:
+                        self.logger.warning(f"Translation failed: {e}")
+                        if not fallback_manager.record_failure():
+                            raise
+                        self._update_translator_settings(self_il)
+
+                raise RuntimeError("All translation models failed")
+
+            il_translator.ILTranslator.translate_paragraph = patched_translate_paragraph
+            self.logger.info("Fallback translation patch applied successfully")
+
+        except ImportError as e:
+            self.logger.warning(f"Could not apply fallback patch: {e}")
+        except Exception as e:
+            self.logger.warning(f"Could not apply fallback patch: {e}")
+
+    def _update_translator_settings(self, il_translator_instance):
+        """Update translator instance with current fallback model settings."""
+        if not self.fallback_translator:
+            return
+
+        model_config = self.fallback_translator.get_current_model()
+
+        # Update the translate engine settings
+        settings = il_translator_instance.translation_config.translate_engine_settings
+        settings.openai_api_key = model_config.api_key
+        settings.openai_base_url = model_config.base_url
+        settings.openai_model = model_config.model
+
+        # Recreate the client if needed
+        if hasattr(il_translator_instance.translate_engine, 'client'):
+            import openai
+            il_translator_instance.translate_engine.client = openai.OpenAI(
+                base_url=model_config.base_url,
+                api_key=model_config.api_key,
+            )
+
     async def translate_pdf_async(
         self,
         input_pdf: str,
@@ -523,6 +633,9 @@ class PDFTranslator:
         Returns:
             TranslationResult 实例
         """
+        # Apply fallback patch if configured
+        self._apply_fallback_patch()
+
         input_path = Path(input_pdf)
         if not input_path.exists():
             raise FileNotFoundError(f"PDF文件不存在: {input_pdf}")
