@@ -31,9 +31,11 @@ except ImportError:
 # Multi-Model Fallback System
 # =============================================================================
 
+
 @dataclass
 class FallbackModelConfig:
     """Configuration for a single translation model."""
+
     name: str
     api_key: str
     base_url: str
@@ -123,6 +125,7 @@ class FallbackTranslator:
 # BabelDOC Patches
 # =============================================================================
 
+
 def _apply_babeldoc_patch():
     """
     应用 babeldoc 补丁，修复控制字符导致JSON解析失败的问题
@@ -135,7 +138,9 @@ def _apply_babeldoc_patch():
         from babeldoc.format.pdf.document_il.midend import il_translator_llm_only
 
         # 保存原始方法（如果需要回滚）
-        original_clean_json_output = il_translator_llm_only.ILTranslatorLLMOnly._clean_json_output
+        original_clean_json_output = (
+            il_translator_llm_only.ILTranslatorLLMOnly._clean_json_output
+        )
 
         def patched_clean_json_output(self, llm_output: str) -> str:
             """
@@ -158,16 +163,19 @@ def _apply_babeldoc_patch():
 
             # 移除控制字符（ASCII 0-31，除了换行符、制表符、回车）
             # 这些控制字符会导致JSON解析失败，触发fallback机制
-            llm_output = ''.join(
-                char for char in llm_output
-                if ord(char) >= 32 or char in '\n\t\r'
+            llm_output = "".join(
+                char for char in llm_output if ord(char) >= 32 or char in "\n\t\r"
             )
 
             return llm_output.strip()
 
         # 应用补丁
-        il_translator_llm_only.ILTranslatorLLMOnly._clean_json_output = patched_clean_json_output
-        logging.getLogger(__name__).info("Successfully applied babeldoc control character patch")
+        il_translator_llm_only.ILTranslatorLLMOnly._clean_json_output = (
+            patched_clean_json_output
+        )
+        logging.getLogger(__name__).info(
+            "Successfully applied babeldoc control character patch"
+        )
 
     except ImportError:
         logging.getLogger(__name__).warning(
@@ -199,7 +207,7 @@ def _is_incomplete_sentence(text: str) -> bool:
         return False
 
     # 检查是否以完整句子结束符结尾
-    complete_endings = ('.', '!', '?', ':', ';', '—', '-', '"', "'", ')', ']', '»', '›')
+    complete_endings = (".", "!", "?", ":", ";", "—", "-", '"', "'", ")", "]", "»", "›")
     if text.endswith(complete_endings):
         return True
 
@@ -242,7 +250,9 @@ def patch_babeldoc_cross_page():
         )
 
         # Save original method for reference (not used, but kept for potential rollback)
-        original_method = il_translator_llm_only.ILTranslatorLLMOnly.process_cross_page_paragraph
+        original_method = (
+            il_translator_llm_only.ILTranslatorLLMOnly.process_cross_page_paragraph
+        )
 
         def patched_process_cross_page_paragraph(
             self,
@@ -292,7 +302,11 @@ def patch_babeldoc_cross_page():
                     continue
 
                 # Check if the last paragraph is incomplete (possibly truncated)
-                is_incomplete = _is_incomplete_sentence(last_curr.unicode) if last_curr.unicode else False
+                is_incomplete = (
+                    _is_incomplete_sentence(last_curr.unicode)
+                    if last_curr.unicode
+                    else False
+                )
 
                 if not is_incomplete:
                     continue
@@ -309,10 +323,9 @@ def patch_babeldoc_cross_page():
                 merged_xobj_font_map = {**curr_xobj_font_map, **next_xobj_font_map}
 
                 # Calculate token count
-                total_token_count = (
-                    self.calc_token_count(last_curr.unicode)
-                    + self.calc_token_count(first_next.unicode)
-                )
+                total_token_count = self.calc_token_count(
+                    last_curr.unicode
+                ) + self.calc_token_count(first_next.unicode)
 
                 # Create and submit batch
                 cross_page_paragraphs = [last_curr, first_next]
@@ -341,7 +354,9 @@ def patch_babeldoc_cross_page():
                 translated_ids.add(id(first_next))
 
         # Apply patch
-        il_translator_llm_only.ILTranslatorLLMOnly.process_cross_page_paragraph = patched_process_cross_page_paragraph
+        il_translator_llm_only.ILTranslatorLLMOnly.process_cross_page_paragraph = (
+            patched_process_cross_page_paragraph
+        )
         _logger.info("BabelDOC cross-page patch applied successfully")
 
     except Exception as e:
@@ -374,9 +389,15 @@ class TranslationResult:
             self.original_pdf_path = result_data.get("original_pdf_path")
             self.mono_pdf_path = result_data.get("mono_pdf_path")
             self.dual_pdf_path = result_data.get("dual_pdf_path")
-            self.no_watermark_mono_pdf_path = result_data.get("no_watermark_mono_pdf_path")
-            self.no_watermark_dual_pdf_path = result_data.get("no_watermark_dual_pdf_path")
-            self.auto_extracted_glossary_path = result_data.get("auto_extracted_glossary_path")
+            self.no_watermark_mono_pdf_path = result_data.get(
+                "no_watermark_mono_pdf_path"
+            )
+            self.no_watermark_dual_pdf_path = result_data.get(
+                "no_watermark_dual_pdf_path"
+            )
+            self.auto_extracted_glossary_path = result_data.get(
+                "auto_extracted_glossary_path"
+            )
             self.total_seconds = result_data.get("total_seconds", 0.0)
             self.peak_memory_usage = result_data.get("peak_memory_usage", 0.0)
         else:
@@ -423,12 +444,14 @@ def parse_fallback_config(config: Dict[str, Any]) -> Optional[FallbackTranslator
             raise ValueError(
                 "Each model must have 'api_key', 'base_url', and 'model' fields"
             )
-        models.append(FallbackModelConfig(
-            name=m.get("name", m["model"]),
-            api_key=m["api_key"],
-            base_url=m["base_url"],
-            model=m["model"],
-        ))
+        models.append(
+            FallbackModelConfig(
+                name=m.get("name", m["model"]),
+                api_key=m["api_key"],
+                base_url=m["base_url"],
+                model=m["model"],
+            )
+        )
 
     fallback_config = config.get("fallback", {})
     threshold = fallback_config.get("consecutive_failures", 3)
@@ -514,9 +537,7 @@ class PDFTranslator:
         pdf = PDFSettings(
             no_dual=kwargs.get("no_dual", False),
             no_mono=kwargs.get("no_mono", False),
-            watermark_output_mode=kwargs.get(
-                "watermark_output_mode", "watermarked"
-            ),
+            watermark_output_mode=kwargs.get("watermark_output_mode", "watermarked"),
             max_pages_per_part=kwargs.get("max_pages_per_part"),
             pages=kwargs.get("pages"),
             enhance_compatibility=kwargs.get("enhance_compatibility", False),
@@ -536,7 +557,9 @@ class PDFTranslator:
                 # 单模型配置（向后兼容）
                 translate_engine_settings = OpenAISettings(
                     openai_api_key=self.config.get("openai_api_key"),
-                    openai_base_url=self.config.get("openai_base_url", "https://api.openai.com/v1"),
+                    openai_base_url=self.config.get(
+                        "openai_base_url", "https://api.openai.com/v1"
+                    ),
                     openai_model=self.config.get("openai_model", "gpt-4o-mini"),
                 )
         else:
@@ -578,20 +601,24 @@ class PDFTranslator:
 
                 for attempt in range(max_attempts):
                     try:
-                        result = original_do_llm_translate(self_translator, text, rate_limit_params)
+                        result = original_do_llm_translate(
+                            self_translator, text, rate_limit_params
+                        )
                         fallback_manager.record_success()
                         return result
                     except BadRequestError as e:
                         current_model = fallback_manager.get_current_model()
                         logger.warning(
-                            f"Model '{current_model.name}/{current_model.model}' rejected content (BadRequestError)"
+                            f"Model '{current_model.name}/{current_model.model}' rejected content (BadRequestError): {str(e)[:100]}"
                         )
 
                         # Try to switch to next model
                         if fallback_manager.has_more_models():
                             fallback_manager._switch_to_next_model()
                             new_model = fallback_manager.get_current_model()
-                            logger.info(f"Switched to fallback model '{new_model.name}/{new_model.model}'")
+                            logger.info(
+                                f"Switched to fallback model '{new_model.name}/{new_model.model}'"
+                            )
                             # Update translator for next attempt
                             self._update_openai_translator(self_translator)
                         else:
@@ -629,6 +656,7 @@ class PDFTranslator:
 
         # Recreate the client
         import openai
+
         translator_instance.client = openai.OpenAI(
             base_url=model_config.base_url,
             api_key=model_config.api_key,
@@ -648,8 +676,9 @@ class PDFTranslator:
         settings.openai_model = model_config.model
 
         # Recreate the client if needed
-        if hasattr(il_translator_instance.translate_engine, 'client'):
+        if hasattr(il_translator_instance.translate_engine, "client"):
             import openai
+
             il_translator_instance.translate_engine.client = openai.OpenAI(
                 base_url=model_config.base_url,
                 api_key=model_config.api_key,
@@ -820,10 +849,7 @@ def clean_json_output(self_or_output, llm_output: str = None) -> str:
 
     # 移除控制字符（ASCII 0-31，除了换行符、制表符、回车）
     # 这些控制字符会导致JSON解析失败，触发fallback机制
-    output = ''.join(
-        char for char in output
-        if ord(char) >= 32 or char in '\n\t\r'
-    )
+    output = "".join(char for char in output if ord(char) >= 32 or char in "\n\t\r")
 
     return output.strip()
 
