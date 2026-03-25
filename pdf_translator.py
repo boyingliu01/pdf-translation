@@ -745,6 +745,93 @@ class PDFTranslator:
         except Exception as e:
             self.logger.warning(f"Could not apply BabelDOC fallback patch: {e}")
 
+        # Also patch ILTranslatorLLMOnly which is actually used
+        self._apply_llm_only_fallback_patch()
+
+    def _apply_llm_only_fallback_patch(self):
+        """Apply patch to ILTranslatorLLMOnly.translate_paragraph for fallback."""
+        if not self.fallback_translator:
+            return
+
+        try:
+            from babeldoc.format.pdf.document_il.midend.il_translator_llm_only import (
+                ILTranslatorLLMOnly,
+            )
+            from openai import BadRequestError
+
+            original_method = ILTranslatorLLMOnly.translate_paragraph
+            fallback_manager = self.fallback_translator
+            logger = self.logger
+            self_ref = self
+
+            def patched_translate_paragraph(
+                self_il,
+                paragraph,
+                page,
+                pbar=None,
+                tracker=None,
+                page_font_map=None,
+                xobj_font_map=None,
+                paragraph_token_count=0,
+                title_paragraph=None,
+                local_title_paragraph=None,
+            ):
+                """Patched translate_paragraph with model fallback."""
+                max_attempts = len(fallback_manager.models)
+
+                for attempt in range(max_attempts):
+                    try:
+                        result = original_method(
+                            self_il,
+                            paragraph,
+                            page,
+                            pbar,
+                            tracker,
+                            page_font_map,
+                            xobj_font_map,
+                            paragraph_token_count,
+                            title_paragraph,
+                            local_title_paragraph,
+                        )
+                        fallback_manager.record_success()
+                        return result
+                    except Exception as e:
+                        error_str = str(e)
+                        if (
+                            "contentFilter" in error_str
+                            or "1301" in error_str
+                            or "BadRequestError" in error_str
+                        ):
+                            current_model = fallback_manager.get_current_model()
+                            logger.warning(
+                                f"[LLMOnly] Model '{current_model.name}/{current_model.model}' "
+                                f"rejected content: {error_str[:80]}"
+                            )
+
+                            if fallback_manager.has_more_models():
+                                fallback_manager._switch_to_next_model()
+                                new_model = fallback_manager.get_current_model()
+                                logger.info(
+                                    f"[LLMOnly] Switched to fallback model "
+                                    f"'{new_model.name}/{new_model.model}'"
+                                )
+                                self_ref._update_translator_settings(self_il)
+                            else:
+                                logger.error("[LLMOnly] All fallback models exhausted")
+                                raise
+                        else:
+                            raise
+
+                raise RuntimeError("All translation models failed")
+
+            ILTranslatorLLMOnly.translate_paragraph = patched_translate_paragraph
+            self.logger.info("ILTranslatorLLMOnly fallback patch applied successfully")
+
+        except ImportError as e:
+            self.logger.warning(f"Could not apply LLMOnly fallback patch: {e}")
+        except Exception as e:
+            self.logger.warning(f"Could not apply LLMOnly fallback patch: {e}")
+
     def _update_openai_translator(self, translator_instance):
         """Update OpenAI translator instance with current fallback model settings."""
         if not self.fallback_translator:
