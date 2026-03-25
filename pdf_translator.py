@@ -643,6 +643,108 @@ class PDFTranslator:
         except Exception as e:
             self.logger.warning(f"Could not apply fallback patch: {e}")
 
+        # Also apply patch at BabelDOC level for content filter errors
+        self._apply_babeldoc_fallback_patch()
+
+    def _apply_babeldoc_fallback_patch(self):
+        """Apply patch at BabelDOC level to handle content filter errors."""
+        if not self.fallback_translator:
+            return
+
+        try:
+            from babeldoc.format.pdf.document_il.midend import il_translator
+            from openai import BadRequestError
+
+            original_translate_paragraph = (
+                il_translator.ILTranslator.translate_paragraph
+            )
+            fallback_manager = self.fallback_translator
+            logger = self.logger
+            self_ref = self  # Reference to PDFTranslator instance
+
+            def patched_translate_paragraph(
+                self_il,
+                paragraph,
+                pbar=None,
+                font_map=None,
+                xobj_font_map=None,
+                first_paragraph=None,
+                recent_title_paragraph=None,
+                executor=None,
+                tracker=None,
+            ):
+                """Patched translate_paragraph with fallback support."""
+                max_attempts = len(fallback_manager.models)
+
+                for attempt in range(max_attempts):
+                    try:
+                        result = original_translate_paragraph(
+                            self_il,
+                            paragraph,
+                            pbar,
+                            font_map,
+                            xobj_font_map,
+                            first_paragraph,
+                            recent_title_paragraph,
+                            executor,
+                            tracker,
+                        )
+                        fallback_manager.record_success()
+                        return result
+                    except BadRequestError as e:
+                        current_model = fallback_manager.get_current_model()
+                        logger.warning(
+                            f"[BabelDOC] Model '{current_model.name}/{current_model.model}' "
+                            f"rejected content (BadRequestError): {str(e)[:80]}"
+                        )
+
+                        # Try to switch to next model
+                        if fallback_manager.has_more_models():
+                            fallback_manager._switch_to_next_model()
+                            new_model = fallback_manager.get_current_model()
+                            logger.info(
+                                f"[BabelDOC] Switched to fallback model "
+                                f"'{new_model.name}/{new_model.model}'"
+                            )
+                            # Update the translator engine
+                            self_ref._update_translator_settings(self_il)
+                        else:
+                            logger.error("[BabelDOC] All fallback models exhausted")
+                            raise
+                    except Exception as e:
+                        if "contentFilter" in str(e) or "1301" in str(e):
+                            # Content filter error (possibly wrapped in another exception)
+                            current_model = fallback_manager.get_current_model()
+                            logger.warning(
+                                f"[BabelDOC] Content filter detected with model "
+                                f"'{current_model.name}/{current_model.model}'"
+                            )
+
+                            if fallback_manager.has_more_models():
+                                fallback_manager._switch_to_next_model()
+                                new_model = fallback_manager.get_current_model()
+                                logger.info(
+                                    f"[BabelDOC] Switched to fallback model "
+                                    f"'{new_model.name}/{new_model.model}'"
+                                )
+                                self_ref._update_translator_settings(self_il)
+                            else:
+                                logger.error("[BabelDOC] All fallback models exhausted")
+                                raise
+                        else:
+                            # Other errors, re-raise
+                            raise
+
+                raise RuntimeError("All translation models failed")
+
+            il_translator.ILTranslator.translate_paragraph = patched_translate_paragraph
+            self.logger.info("BabelDOC fallback patch applied successfully")
+
+        except ImportError as e:
+            self.logger.warning(f"Could not apply BabelDOC fallback patch: {e}")
+        except Exception as e:
+            self.logger.warning(f"Could not apply BabelDOC fallback patch: {e}")
+
     def _update_openai_translator(self, translator_instance):
         """Update OpenAI translator instance with current fallback model settings."""
         if not self.fallback_translator:
