@@ -998,8 +998,17 @@ class PDFTranslator:
                     self.logger.info(str(result))
 
                     # Add page numbers to the translated PDF
-                    if result.dual_pdf_path and Path(result.dual_pdf_path).exists():
-                        self._add_page_numbers_to_pdf(result.dual_pdf_path)
+                    pdf_to_number = None
+                    if (
+                        result.no_watermark_dual_pdf_path
+                        and Path(result.no_watermark_dual_pdf_path).exists()
+                    ):
+                        pdf_to_number = result.no_watermark_dual_pdf_path
+                    elif result.dual_pdf_path and Path(result.dual_pdf_path).exists():
+                        pdf_to_number = result.dual_pdf_path
+
+                    if pdf_to_number:
+                        self._add_page_numbers_to_pdf(pdf_to_number)
 
             return result
 
