@@ -832,6 +832,48 @@ class PDFTranslator:
         except Exception as e:
             self.logger.warning(f"Could not apply LLMOnly fallback patch: {e}")
 
+    def _add_page_numbers_to_pdf(self, pdf_path: str, font_size: int = 10) -> None:
+        """
+        为PDF添加页码
+
+        Args:
+            pdf_path: PDF文件路径
+            font_size: 页码字体大小
+        """
+        try:
+            import fitz
+
+            doc = fitz.open(pdf_path)
+            total_pages = len(doc)
+
+            for page_num in range(total_pages):
+                page = doc[page_num]
+                rect = page.rect
+
+                # 计算页码位置 (右下角)
+                margin_right = 50
+                margin_bottom = 30
+
+                x = rect.width - margin_right
+                y = rect.height - margin_bottom
+
+                point = fitz.Point(x, y)
+
+                # 页码文本
+                page_text = str(page_num + 1)
+
+                # 添加页码 (黑色)
+                page.insert_text(point, page_text, fontsize=font_size, color=(0, 0, 0))
+
+            # 保存修改
+            doc.save(pdf_path)
+            doc.close()
+
+            self.logger.info(f"已添加页码到 {total_pages} 页")
+
+        except Exception as e:
+            self.logger.warning(f"添加页码时出错: {e}")
+
     def _update_openai_translator(self, translator_instance):
         """Update OpenAI translator instance with current fallback model settings."""
         if not self.fallback_translator:
@@ -954,6 +996,10 @@ class PDFTranslator:
                     result = TranslationResult(event["translate_result"])
                     self.logger.info("翻译完成!")
                     self.logger.info(str(result))
+
+                    # Add page numbers to the translated PDF
+                    if result.dual_pdf_path and Path(result.dual_pdf_path).exists():
+                        self._add_page_numbers_to_pdf(result.dual_pdf_path)
 
             return result
 
