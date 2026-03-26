@@ -1,0 +1,48 @@
+{
+  "translation_engine": "openai",
+  "_comment": "国外模型专用配置 - 用于翻译敏感内容页面",
+  "models": [
+    {
+      "name": "codebuddy-gpt-5.4",
+      "api_key": "ck_fgzhkstwe41s.83ap_vIOidb2HnCzeJ2UCN9GJNMf94mJEIxXbCqXYcs",
+      "base_url": "https://www.codebuddy.ai/v2",
+      "model": "gpt-5.4",
+      "note": "国外模型 - 处理敏感词"
+    },
+    {
+      "name": "codebuddy-gpt-5.3-codex",
+      "api_key": "ck_fgzhkstwe41s.83ap_vIOidb2HnCzeJ2UCN9GJNMf94mJEIxXbCqXYcs",
+      "base_url": "https://www.codebuddy.ai/v2",
+      "model": "gpt-5.3-codex",
+      "note": "国外模型 - 处理敏感词"
+    },
+    {
+      "name": "codebuddy-gpt-5.1",
+      "api_key": "ck_fgzhkstwe41s.83ap_vIOidb2HnCzeJ2UCN9GJNMf94mJEIxXbCqXYcs",
+      "base_url": "https://www.codebuddy.ai/v2",
+      "model": "gpt-5.1",
+      "note": "国外模型 - 处理敏感词"
+    },
+    {
+      "name": "codebuddy-gemini-3.0-pro",
+      "api_key": "ck_fgzhkstwe41s.83ap_vIOidb2HnCzeJ2UCN9GJNMf94mJEIxXbCqXYcs",
+      "base_url": "https://www.codebuddy.ai/v2",
+      "model": "gemini-3.0-pro",
+      "note": "国外模型 - 处理敏感词"
+    },
+    {
+      "name": "codebuddy-gemini-3.0-flash",
+      "api_key": "ck_fgzhkstwe41s.83ap_vIOidb2HnCzeJ2UCN9GJNMf94mJEIxXbCqXYcs",
+      "base_url": "https://www.codebuddy.ai/v2",
+      "model": "gemini-3.0-flash",
+      "note": "国外模型 - 处理敏感词"
+    }
+  ],
+  "fallback": {
+    "consecutive_failures": 1
+  },
+  "qps": 2,
+  "min_text_length": 5,
+  "debug": false,
+  "custom_system_prompt": null
+}

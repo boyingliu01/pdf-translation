@@ -1,0 +1,34 @@
+{
+  "translation_engine": "openai",
+  "_comment": "阿里云百炼配置 - 用于翻译敏感内容页面",
+  "models": [
+    {
+      "name": "bailian-qwen3.5-plus",
+      "api_key": "sk-sp-8651e13b3b5a4aeca221932bd573e080",
+      "base_url": "https://coding.dashscope.aliyuncs.com/v1",
+      "model": "qwen3.5-plus",
+      "note": "阿里百炼 - 国内备用"
+    },
+    {
+      "name": "bailian-glm-5",
+      "api_key": "sk-sp-8651e13b3b5a4aeca221932bd573e080",
+      "base_url": "https://coding.dashscope.aliyuncs.com/v1",
+      "model": "glm-5",
+      "note": "阿里百炼 - 国内备用"
+    },
+    {
+      "name": "bailian-kimi-k2.5",
+      "api_key": "sk-sp-8651e13b3b5a4aeca221932bd573e080",
+      "base_url": "https://coding.dashscope.aliyuncs.com/v1",
+      "model": "kimi-k2.5",
+      "note": "阿里百炼 - 国内备用"
+    }
+  ],
+  "fallback": {
+    "consecutive_failures": 1
+  },
+  "qps": 4,
+  "min_text_length": 5,
+  "debug": false,
+  "custom_system_prompt": null
+}
