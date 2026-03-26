@@ -3,18 +3,18 @@
   "_comment": "多模型配置 - 智谱AI(主力) + 阿里百炼 + codebuddy-oversea(国外模型备用)",
   "models": [
     {
-      "name": "zhipu",
-      "api_key": "***API_KEY_REMOVED***",
-      "base_url": "https://open.bigmodel.cn/api/paas/v4",
-      "model": "glm-4-flash",
-      "note": "主力模型 - 免费额度充足"
-    },
-    {
       "name": "bailian-qwen3.5-plus",
       "api_key": "sk-sp-8651e13b3b5a4aeca221932bd573e080",
       "base_url": "https://coding.dashscope.aliyuncs.com/v1",
       "model": "qwen3.5-plus",
       "note": "阿里百炼 - 国内备用"
+    },
+    {
+      "name": "zhipu",
+      "api_key": "***API_KEY_REMOVED***",
+      "base_url": "https://open.bigmodel.cn/api/paas/v4",
+      "model": "glm-4-flash",
+      "note": "主力模型 - 免费额度充足"
     },
     {
       "name": "bailian-glm-5",
