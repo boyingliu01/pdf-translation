@@ -15,6 +15,18 @@ This is a Python-based PDF translation tool that converts PDF documents to bilin
 pip install -r requirements.txt
 ```
 
+### Code Quality Checks
+```bash
+# Run all quality checks
+python -m ruff check pdf_translator.py translate_pdf.py
+python -m radon cc pdf_translator.py -a
+python -m pylint --disable=all --enable=similarities pdf_translator.py
+python -m bandit -r pdf_translator.py translate_pdf.py -f txt
+
+# Generate comprehensive test report
+python test/performance_test.py
+```
+
 ### Running Translations
 ```bash
 # Basic translation
@@ -204,3 +216,39 @@ settings.validate_settings()
 8. Large documents benefit from `--max-pages-per-part` option
 9. Increasing `qps` in config improves translation speed
 10. Recommended model: ZhipuAI's glm-4-flash (free and high quality)
+
+## Code Quality Standards
+
+### Linting and Formatting
+- **Ruff** (preferred): Fast Python linter - `python -m ruff check pdf_translator.py translate_pdf.py`
+- Line length limit: 120 characters
+- No unused imports or variables
+
+### Complexity Standards (Clean Code)
+- **Cyclomatic Complexity**: CCN < 10 per function/method
+- **Average Complexity**: Target grade A (avg < 4.0)
+- **Function Length**: < 50 lines per function
+- **Duplicate Code**: < 3% (checked via pylint similarities)
+- Check with: `python -m radon cc pdf_translator.py -a`
+
+### Security Scanning
+- **Bandit**: Security vulnerability scanner
+- Run: `python -m bandit -r pdf_translator.py translate_pdf.py -f txt`
+- Target: 0 high/medium severity issues
+
+### Pre-commit Checklist
+Before committing code:
+1. ✅ Ruff passes with no errors
+2. ✅ Radon shows average complexity grade A or B
+3. ✅ No functions with complexity grade D or F
+4. ✅ Pylint similarities shows no duplicate code
+5. ✅ Bandit shows no security issues
+
+### Test Requirements
+- Tests are standalone scripts in `test/` directory
+- Run all tests before major commits:
+  ```bash
+  python test/test_translate.py
+  python test/test_config_creation.py
+  python test/test_engines.py
+  ```
