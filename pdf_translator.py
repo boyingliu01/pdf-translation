@@ -18,7 +18,6 @@ try:
         BasicSettings,
         TranslationSettings,
         PDFSettings,
-        WatermarkOutputMode,
     )
     from pdf2zh_next.config.translate_engine_model import OpenAISettings
     from pdf2zh_next.high_level import do_translate_async_stream
@@ -137,11 +136,6 @@ def _apply_babeldoc_patch():
     try:
         from babeldoc.format.pdf.document_il.midend import il_translator_llm_only
 
-        # 保存原始方法（如果需要回滚）
-        original_clean_json_output = (
-            il_translator_llm_only.ILTranslatorLLMOnly._clean_json_output
-        )
-
         def patched_clean_json_output(self, llm_output: str) -> str:
             """
             清理JSON输出，移除包装标签和控制字符
@@ -247,11 +241,6 @@ def patch_babeldoc_cross_page():
         )
         from babeldoc.format.pdf.document_il.midend.il_translator import (
             DocumentTranslateTracker,
-        )
-
-        # Save original method for reference (not used, but kept for potential rollback)
-        original_method = (
-            il_translator_llm_only.ILTranslatorLLMOnly.process_cross_page_paragraph
         )
 
         def patched_process_cross_page_paragraph(
@@ -585,7 +574,6 @@ class PDFTranslator:
         try:
             from pdf2zh_next.translator.translator_impl.openai import OpenAITranslator
             from openai import BadRequestError
-            import openai
 
             original_do_llm_translate = OpenAITranslator.do_llm_translate
             fallback_manager = self.fallback_translator  # Capture for closure
@@ -596,7 +584,6 @@ class PDFTranslator:
 
                 On BadRequestError (content filter), immediately switch to next model and retry.
                 """
-                current_model_index = fallback_manager.current_index
                 max_attempts = len(fallback_manager.models)
 
                 for attempt in range(max_attempts):
@@ -757,7 +744,6 @@ class PDFTranslator:
             from babeldoc.format.pdf.document_il.midend.il_translator_llm_only import (
                 ILTranslatorLLMOnly,
             )
-            from openai import BadRequestError
 
             original_method = ILTranslatorLLMOnly.translate_paragraph
             fallback_manager = self.fallback_translator
