@@ -1,0 +1,7 @@
+pdf_translator.py
+    M 918:4 PDFTranslator.translate_pdf_async - C
+translate_pdf.py
+    F 14:0 main - C
+
+2 blocks (classes, functions, methods) analyzed.
+Average complexity: C (13.5)
