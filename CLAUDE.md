@@ -219,30 +219,78 @@ settings.validate_settings()
 
 ## Code Quality Standards
 
+### Complete Static Analysis Toolchain
+
+This project uses a comprehensive static analysis toolchain:
+
+| Tool | Purpose | Command | Priority |
+|------|---------|---------|----------|
+| **Ruff** | Fast Python linter (replaces flake8/pylint) | `python -m ruff check pdf_translator.py translate_pdf.py` | Primary |
+| **Mypy** | Static type checker | `python -m mypy pdf_translator.py translate_pdf.py --ignore-missing-imports` | High |
+| **Bandit** | Security vulnerability scanner | `python -m bandit -r pdf_translator.py translate_pdf.py -f txt` | High |
+| **Radon** | Cyclomatic complexity analyzer | `python -m radon cc pdf_translator.py -a` | Medium |
+| **Lizard** | Alternative complexity analyzer | `python -m lizard pdf_translator.py` | Medium |
+| **Pylint** | Code analysis (similarities) | `python -m pylint --disable=all --enable=similarities pdf_translator.py` | Low |
+| **Flake8** | Style guide enforcement | `python -m flake8 pdf_translator.py translate_pdf.py --max-line-length=120` | Deprecated (use Ruff) |
+| **Isort** | Import sorting | `python -m isort pdf_translator.py translate_pdf.py --check-only` | Medium |
+
+### Quick Quality Check (Recommended)
+```bash
+# Run the essential checks quickly
+python -m ruff check pdf_translator.py translate_pdf.py
+python -m mypy pdf_translator.py translate_pdf.py --ignore-missing-imports
+python -m bandit -r pdf_translator.py translate_pdf.py -f txt
+python -m radon cc pdf_translator.py -a
+```
+
+### Full Quality Check (Pre-commit)
+```bash
+# Generate complete test reports
+python -m ruff check pdf_translator.py translate_pdf.py > test/ruff_report.txt
+python -m mypy pdf_translator.py translate_pdf.py --ignore-missing-imports > test/mypy_report.txt
+python -m bandit -r pdf_translator.py translate_pdf.py -f txt > test/bandit_report.txt
+python -m radon cc pdf_translator.py -a > test/radon_report.txt
+python -m lizard pdf_translator.py > test/lizard_report.txt
+python -m pylint --disable=all --enable=similarities pdf_translator.py > test/pylint_report.txt
+python -m flake8 pdf_translator.py translate_pdf.py --max-line-length=120 > test/flake8_report.txt
+```
+
 ### Linting and Formatting
-- **Ruff** (preferred): Fast Python linter - `python -m ruff check pdf_translator.py translate_pdf.py`
-- Line length limit: 120 characters
-- No unused imports or variables
+- **Ruff** (preferred): Fast Python linter, replaces flake8/pylint
+  - Line length limit: 120 characters
+  - No unused imports or variables
+  - No undefined names
+- **Mypy**: Type checking for Python
+  - All functions should have type hints
+  - Use `--ignore-missing-imports` for third-party libraries without stubs
+- **Isort**: Import sorting and organization
+  - Standard library imports first
+  - Third-party imports second
+  - Local imports last
 
 ### Complexity Standards (Clean Code)
 - **Cyclomatic Complexity**: CCN < 10 per function/method
 - **Average Complexity**: Target grade A (avg < 4.0)
 - **Function Length**: < 50 lines per function
 - **Duplicate Code**: < 3% (checked via pylint similarities)
-- Check with: `python -m radon cc pdf_translator.py -a`
+- **File Length**: < 500 lines per file
+- Check with: `python -m radon cc pdf_translator.py -a` or `python -m lizard pdf_translator.py`
 
 ### Security Scanning
 - **Bandit**: Security vulnerability scanner
 - Run: `python -m bandit -r pdf_translator.py translate_pdf.py -f txt`
 - Target: 0 high/medium severity issues
+- Common issues to avoid: hardcoded passwords, SQL injection, shell injection
 
 ### Pre-commit Checklist
 Before committing code:
 1. ✅ Ruff passes with no errors
-2. ✅ Radon shows average complexity grade A or B
-3. ✅ No functions with complexity grade D or F
-4. ✅ Pylint similarities shows no duplicate code
-5. ✅ Bandit shows no security issues
+2. ✅ Mypy passes with no type errors (or only expected missing imports)
+3. ✅ Radon shows average complexity grade A or B
+4. ✅ No functions with complexity grade D or F
+5. ✅ Pylint similarities shows no duplicate code
+6. ✅ Bandit shows no security issues
+7. ✅ Isort passes (imports are sorted correctly)
 
 ### Test Requirements
 - Tests are standalone scripts in `test/` directory
