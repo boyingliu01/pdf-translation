@@ -42,4 +42,6 @@ config/config.json
 
 # Internal documentation (not for public)
 docs/OPEN_SOURCE_SUMMARY.md
+docs/internal/
+docs/superpowers/
 .tmp_pdf_compare/
