@@ -113,7 +113,7 @@ def main():
             f"错误: 配置文件不存在: {args.config}",
             file=sys.stderr,
         )
-        print(f"提示: 使用 --create-config 创建示例配置文件", file=sys.stderr)
+        print("提示: 使用 --create-config 创建示例配置文件", file=sys.stderr)
         sys.exit(1)
 
     print("=" * 60)
