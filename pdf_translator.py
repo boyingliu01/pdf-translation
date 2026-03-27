@@ -172,24 +172,19 @@ def _apply_babeldoc_patch():
             patched_clean_json_output
         )
 
-        # 同时修补 translate_paragraph 以清理输入文本中的控制字符
-        original_translate_paragraph = (
-            il_translator_llm_only.ILTranslatorLLMOnly.translate_paragraph
-        )
+        # 同时修补 json.dumps 以清理输入中的控制字符
+        import json as json_module
 
-        def patched_translate_paragraph(self, batch_paragraph, **kwargs):
-            """在翻译前清理输入段落中的控制字符"""
-            # 清理每个段落的 unicode 文本
-            for paragraph in batch_paragraph.paragraphs:
-                if hasattr(paragraph, "unicode") and paragraph.unicode:
-                    paragraph.unicode = clean_control_chars(paragraph.unicode)
+        original_json_loads = json_module.loads
 
-            # 调用原始方法
-            return original_translate_paragraph(self, batch_paragraph, **kwargs)
+        def patched_json_loads(s, *args, **kwargs):
+            """在JSON解析前清理控制字符"""
+            if isinstance(s, str):
+                # 清理控制字符（ASCII 0-31，保留换行、制表、回车）
+                s = clean_control_chars(s)
+            return original_json_loads(s, *args, **kwargs)
 
-        il_translator_llm_only.ILTranslatorLLMOnly.translate_paragraph = (
-            patched_translate_paragraph
-        )
+        json_module.loads = patched_json_loads
 
         logging.getLogger(__name__).info(
             "Successfully applied babeldoc control character patch (input + output)"
