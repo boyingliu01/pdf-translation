@@ -175,6 +175,36 @@ settings.validate_settings()  # Always validate
 }
 ```
 
+### Progress Callback Pattern
+```python
+def progress_callback(event):
+    event_type = event.get("type")
+    if event_type == "progress_update":
+        stage = event.get("stage")
+        progress = event.get("overall_progress", 0)
+        print(f"[{stage}] {progress:.1f}%")
+
+result = translator.translate_pdf(..., progress_callback=progress_callback)
+```
+
+## Available Config Templates
+
+The `config/` directory provides multiple configuration templates:
+- `config.example.json` - General configuration example
+- `config.openai.json` - OpenAI configuration template
+- `config.zhipu.json` - ZhipuAI configuration template (recommended, free tier available)
+- `config.siliconflow.json` - SiliconFlow configuration template
+- `config.volcengine.json` - VolcEngine configuration template
+- `config.test.json` - Test configuration
+
+## Translation Engine Abstraction
+
+The tool uses an OpenAI-compatible API interface. Multiple providers are supported via `openai_base_url` configuration:
+- **ZhipuAI (GLM-4-Flash)** - Free, recommended (`https://open.bigmodel.cn/api/paas/v4`)
+- **OpenAI** - Native (`https://api.openai.com/v1`)
+- **SiliconFlow (DeepSeek)** - Free tokens (`https://api.siliconflow.cn/v1`)
+- **VolcEngine (Doubao)** - PRO subscription (`https://ark.cn-beijing.volces.com/api/v3`)
+
 ## Important Reminders
 
 1. Never use `try/except: pass` - always handle or re-raise
@@ -184,3 +214,60 @@ settings.validate_settings()  # Always validate
 5. Tests are standalone scripts; run directly with `python test/<name>.py`
 6. Use Chinese docstrings when appropriate for this codebase
 7. CLI errors should exit with `sys.exit(1)`
+8. Large documents benefit from `--max-pages-per-part` option
+9. Increasing `qps` in config improves translation speed
+10. Recommended model: ZhipuAI's glm-4-flash (free and high quality)
+
+## Code Quality Standards
+
+### Complete Static Analysis Toolchain
+
+| Tool | Purpose | Command | Priority |
+|------|---------|---------|----------|
+| **Ruff** | Fast Python linter | `python -m ruff check pdf_translator.py translate_pdf.py` | Primary |
+| **Mypy** | Static type checker | `python -m mypy pdf_translator.py translate_pdf.py --ignore-missing-imports` | High |
+| **Bandit** | Security vulnerability scanner | `python -m bandit -r pdf_translator.py translate_pdf.py -f txt` | High |
+| **Radon** | Cyclomatic complexity analyzer | `python -m radon cc pdf_translator.py -a` | Medium |
+| **Lizard** | Alternative complexity analyzer | `python -m lizard pdf_translator.py` | Medium |
+
+### Quick Quality Check
+```bash
+python -m ruff check pdf_translator.py translate_pdf.py
+python -m mypy pdf_translator.py translate_pdf.py --ignore-missing-imports
+python -m bandit -r pdf_translator.py translate_pdf.py -f txt
+python -m radon cc pdf_translator.py -a
+```
+
+### Complexity Standards (Clean Code)
+- **Cyclomatic Complexity**: CCN < 10 per function/method
+- **Average Complexity**: Target grade A (avg < 4.0)
+- **Function Length**: < 50 lines per function
+- **Duplicate Code**: < 3% (checked via pylint similarities)
+- **File Length**: < 500 lines per file
+
+### Security Red Lines (Never Commit)
+**绝对禁止提交到 git 仓库的内容：**
+1. ✅ **API Keys / Tokens** - 包括所有翻译引擎的密钥
+2. ✅ **Passwords** - 任何密码或凭据
+3. ✅ **Private Configs** - 包含真实密钥的配置文件 (`config/config.json`)
+4. ✅ **Personal Data** - 用户个人数据或敏感信息
+
+**预提交安全检查：**
+```bash
+git diff --cached | grep -E "(api_key|apikey|password|secret|token)" || echo "✅ No sensitive data found"
+grep "config/config.json" .gitignore || echo "⚠️ config/config.json not in .gitignore!"
+```
+
+**泄漏响应步骤：**
+1. **立即撤销密钥** - 在服务商后台吊销泄漏的 API Key
+2. **清理历史** - 使用 `git-filter-repo` 从历史中移除
+3. **强制推送** - `git push --force origin --all`
+4. **重新生成密钥** - 生成新的 API Key
+
+### Pre-commit Checklist
+Before committing code:
+1. ✅ Ruff passes with no errors
+2. ✅ Bandit shows no security issues
+3. ✅ Radon shows average complexity grade A or B
+4. ✅ No sensitive data in staged changes
+5. ✅ config/config.json is in .gitignore
