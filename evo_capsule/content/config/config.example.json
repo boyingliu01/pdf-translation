@@ -1,0 +1,24 @@
+{
+  "translation_engine": "openai",
+  "models": [
+    {
+      "name": "zhipu",
+      "api_key": "your-zhipu-api-key",
+      "base_url": "https://open.bigmodel.cn/api/paas/v4",
+      "model": "glm-4-flash"
+    },
+    {
+      "name": "openai",
+      "api_key": "your-openai-api-key",
+      "base_url": "https://api.openai.com/v1",
+      "model": "gpt-4o-mini"
+    }
+  ],
+  "fallback": {
+    "consecutive_failures": 3
+  },
+  "qps": 4,
+  "min_text_length": 5,
+  "debug": false,
+  "custom_system_prompt": null
+}
