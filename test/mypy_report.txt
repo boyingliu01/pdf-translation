@@ -1,0 +1,12 @@
+pdf_translator.py:380: error: Item "dict[str, Any]" of "dict[str, Any] | Any" has no attribute "mono_pdf_path"  [union-attr]
+pdf_translator.py:381: error: Item "dict[str, Any]" of "dict[str, Any] | Any" has no attribute "dual_pdf_path"  [union-attr]
+pdf_translator.py:382: error: Item "dict[str, Any]" of "dict[str, Any] | Any" has no attribute "no_watermark_mono_pdf_path"  [union-attr]
+pdf_translator.py:383: error: Item "dict[str, Any]" of "dict[str, Any] | Any" has no attribute "no_watermark_dual_pdf_path"  [union-attr]
+pdf_translator.py:384: error: Item "dict[str, Any]" of "dict[str, Any] | Any" has no attribute "auto_extracted_glossary_path"  [union-attr]
+pdf_translator.py:385: error: Item "dict[str, Any]" of "dict[str, Any] | Any" has no attribute "total_seconds"  [union-attr]
+pdf_translator.py:386: error: Item "dict[str, Any]" of "dict[str, Any] | Any" has no attribute "peak_memory_usage"  [union-attr]
+pdf_translator.py:1013: error: Incompatible return value type (got "TranslationResult | None", expected "TranslationResult")  [return-value]
+pdf_translator.py:1054: error: Incompatible default for argument "llm_output" (default has type "None", argument has type "str")  [assignment]
+pdf_translator.py:1054: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+pdf_translator.py:1054: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+Found 9 errors in 1 file (checked 2 source files)

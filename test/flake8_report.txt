@@ -1,0 +1,8 @@
+pdf_translator.py:16:5: F401 'pdf2zh_next.config.model.WatermarkOutputMode' imported but unused
+pdf_translator.py:141:9: F841 local variable 'original_clean_json_output' is assigned to but never used
+pdf_translator.py:253:9: F841 local variable 'original_method' is assigned to but never used
+pdf_translator.py:588:13: F401 'openai' imported but unused
+pdf_translator.py:599:17: F841 local variable 'current_model_index' is assigned to but never used
+pdf_translator.py:612:121: E501 line too long (132 > 120 characters)
+pdf_translator.py:760:13: F401 'openai.BadRequestError' imported but unused
+translate_pdf.py:116:15: F541 f-string is missing placeholders
