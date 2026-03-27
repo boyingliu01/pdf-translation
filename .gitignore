@@ -33,6 +33,7 @@ nul
 # Examples (large files not for repo)
 examples/*.pdf
 examples/*.csv
+examples/output/
 examples/!README.md
 
 # Sensitive configs
