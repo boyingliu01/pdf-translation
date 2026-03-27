@@ -282,6 +282,28 @@ python -m flake8 pdf_translator.py translate_pdf.py --max-line-length=120 > test
 - Target: 0 high/medium severity issues
 - Common issues to avoid: hardcoded passwords, SQL injection, shell injection
 
+### ⚠️ Security Red Lines (Never Commit)
+**绝对禁止提交到 git 仓库的内容：**
+1. ✅ **API Keys / Tokens** - 包括 OpenAI、ZhipuAI、VolcEngine 等所有翻译引擎的密钥
+2. ✅ **Passwords** - 任何密码或凭据
+3. ✅ **Private Configs** - 包含真实密钥的配置文件 (`config/config.json`)
+4. ✅ **Personal Data** - 用户个人数据或敏感信息
+
+**预提交安全检查：**
+```bash
+# 检查即将提交的内容是否包含敏感信息
+git diff --cached | grep -E "(api_key|apikey|password|secret|token)" || echo "✅ No sensitive data found"
+
+# 检查 config.json 是否在 .gitignore 中
+grep "config/config.json" .gitignore || echo "⚠️ config/config.json not in .gitignore!"
+```
+
+**如果不小心提交了敏感信息：**
+1. **立即撤销密钥** - 在服务商后台吊销泄漏的 API Key
+2. **清理历史** - 使用 git-filter-repo 从历史中移除敏感信息
+3. **强制推送** - `git push --force origin --all`
+4. **重新生成密钥** - 生成新的 API Key 并更新本地配置
+
 ### Pre-commit Checklist
 Before committing code:
 1. ✅ Ruff passes with no errors
