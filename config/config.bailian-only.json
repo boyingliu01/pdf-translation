@@ -1,26 +1,12 @@
 {
   "translation_engine": "openai",
-  "_comment": "阿里云百炼配置 - 用于翻译敏感内容页面",
+  "_comment": "阿里云百炼配置模板 - 请替换为你的真实API Key",
   "models": [
     {
       "name": "bailian-qwen3.5-plus",
-      "api_key": "sk-sp-8651e13b3b5a4aeca221932bd573e080",
-      "base_url": "https://coding.dashscope.aliyuncs.com/v1",
-      "model": "qwen3.5-plus",
-      "note": "阿里百炼 - 国内备用"
-    },
-    {
-      "name": "bailian-glm-5",
-      "api_key": "sk-sp-8651e13b3b5a4aeca221932bd573e080",
-      "base_url": "https://coding.dashscope.aliyuncs.com/v1",
-      "model": "glm-5",
-      "note": "阿里百炼 - 国内备用"
-    },
-    {
-      "name": "bailian-kimi-k2.5",
-      "api_key": "sk-sp-8651e13b3b5a4aeca221932bd573e080",
-      "base_url": "https://coding.dashscope.aliyuncs.com/v1",
-      "model": "kimi-k2.5",
+      "api_key": "YOUR_BAILIAN_API_KEY_HERE",
+      "base_url": "https://dashscope.aliyuncs.com/v1",
+      "model": "qwen-plus",
       "note": "阿里百炼 - 国内备用"
     }
   ],

@@ -1,73 +1,24 @@
 {
   "translation_engine": "openai",
-  "_comment": "多模型配置 - 智谱AI(主力) + 阿里百炼 + codebuddy-oversea(国外模型备用)",
+  "_comment": "多模型配置模板 - 请替换为你的真实API Key",
   "models": [
     {
-      "name": "bailian-qwen3.5-plus",
-      "api_key": "sk-sp-8651e13b3b5a4aeca221932bd573e080",
-      "base_url": "https://coding.dashscope.aliyuncs.com/v1",
-      "model": "qwen3.5-plus",
-      "note": "阿里百炼 - 国内备用"
+      "name": "primary",
+      "api_key": "YOUR_PRIMARY_API_KEY_HERE",
+      "base_url": "https://api.openai.com/v1",
+      "model": "gpt-4o-mini",
+      "note": "主力模型"
     },
     {
-      "name": "zhipu",
-      "api_key": "***API_KEY_REMOVED***",
-      "base_url": "https://open.bigmodel.cn/api/paas/v4",
-      "model": "glm-4-flash",
-      "note": "主力模型 - 免费额度充足"
-    },
-    {
-      "name": "bailian-glm-5",
-      "api_key": "sk-sp-8651e13b3b5a4aeca221932bd573e080",
-      "base_url": "https://coding.dashscope.aliyuncs.com/v1",
-      "model": "glm-5",
-      "note": "阿里百炼 - 国内备用"
-    },
-    {
-      "name": "bailian-kimi-k2.5",
-      "api_key": "sk-sp-8651e13b3b5a4aeca221932bd573e080",
-      "base_url": "https://coding.dashscope.aliyuncs.com/v1",
-      "model": "kimi-k2.5",
-      "note": "阿里百炼 - 国内备用"
-    },
-    {
-      "name": "codebuddy-gpt-5.4",
-      "api_key": "ck_fgzhkstwe41s.83ap_vIOidb2HnCzeJ2UCN9GJNMf94mJEIxXbCqXYcs",
-      "base_url": "https://www.codebuddy.ai/v2",
-      "model": "gpt-5.4",
-      "note": "国外模型 - 处理敏感词"
-    },
-    {
-      "name": "codebuddy-gpt-5.3-codex",
-      "api_key": "ck_fgzhkstwe41s.83ap_vIOidb2HnCzeJ2UCN9GJNMf94mJEIxXbCqXYcs",
-      "base_url": "https://www.codebuddy.ai/v2",
-      "model": "gpt-5.3-codex",
-      "note": "国外模型 - 处理敏感词"
-    },
-    {
-      "name": "codebuddy-gpt-5.1",
-      "api_key": "ck_fgzhkstwe41s.83ap_vIOidb2HnCzeJ2UCN9GJNMf94mJEIxXbCqXYcs",
-      "base_url": "https://www.codebuddy.ai/v2",
-      "model": "gpt-5.1",
-      "note": "国外模型 - 处理敏感词"
-    },
-    {
-      "name": "codebuddy-gemini-3.0-pro",
-      "api_key": "ck_fgzhkstwe41s.83ap_vIOidb2HnCzeJ2UCN9GJNMf94mJEIxXbCqXYcs",
-      "base_url": "https://www.codebuddy.ai/v2",
-      "model": "gemini-3.0-pro",
-      "note": "国外模型 - 处理敏感词"
-    },
-    {
-      "name": "codebuddy-gemini-3.0-flash",
-      "api_key": "ck_fgzhkstwe41s.83ap_vIOidb2HnCzeJ2UCN9GJNMf94mJEIxXbCqXYcs",
-      "base_url": "https://www.codebuddy.ai/v2",
-      "model": "gemini-3.0-flash",
-      "note": "国外模型 - 处理敏感词"
+      "name": "fallback",
+      "api_key": "YOUR_FALLBACK_API_KEY_HERE",
+      "base_url": "https://api.openai.com/v1",
+      "model": "gpt-3.5-turbo",
+      "note": "备用模型"
     }
   ],
   "fallback": {
-    "consecutive_failures": 1
+    "consecutive_failures": 3
   },
   "qps": 4,
   "min_text_length": 5,
