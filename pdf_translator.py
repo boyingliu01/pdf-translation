@@ -136,6 +136,12 @@ def _apply_babeldoc_patch():
     try:
         from babeldoc.format.pdf.document_il.midend import il_translator_llm_only
 
+        def clean_control_chars(text: str) -> str:
+            """清理控制字符（ASCII 0-31，保留换行、制表、回车）"""
+            if not isinstance(text, str):
+                return text
+            return "".join(char for char in text if ord(char) >= 32 or char in "\n\t\r")
+
         def patched_clean_json_output(self, llm_output: str) -> str:
             """
             清理JSON输出，移除包装标签和控制字符
@@ -157,18 +163,36 @@ def _apply_babeldoc_patch():
 
             # 移除控制字符（ASCII 0-31，除了换行符、制表符、回车）
             # 这些控制字符会导致JSON解析失败，触发fallback机制
-            llm_output = "".join(
-                char for char in llm_output if ord(char) >= 32 or char in "\n\t\r"
-            )
+            llm_output = clean_control_chars(llm_output)
 
             return llm_output.strip()
 
-        # 应用补丁
+        # 应用输出清理补丁
         il_translator_llm_only.ILTranslatorLLMOnly._clean_json_output = (
             patched_clean_json_output
         )
+
+        # 同时修补 translate_paragraph 以清理输入文本中的控制字符
+        original_translate_paragraph = (
+            il_translator_llm_only.ILTranslatorLLMOnly.translate_paragraph
+        )
+
+        def patched_translate_paragraph(self, batch_paragraph, **kwargs):
+            """在翻译前清理输入段落中的控制字符"""
+            # 清理每个段落的 unicode 文本
+            for paragraph in batch_paragraph.paragraphs:
+                if hasattr(paragraph, "unicode") and paragraph.unicode:
+                    paragraph.unicode = clean_control_chars(paragraph.unicode)
+
+            # 调用原始方法
+            return original_translate_paragraph(self, batch_paragraph, **kwargs)
+
+        il_translator_llm_only.ILTranslatorLLMOnly.translate_paragraph = (
+            patched_translate_paragraph
+        )
+
         logging.getLogger(__name__).info(
-            "Successfully applied babeldoc control character patch"
+            "Successfully applied babeldoc control character patch (input + output)"
         )
 
     except ImportError:
