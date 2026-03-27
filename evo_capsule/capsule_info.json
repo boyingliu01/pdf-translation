@@ -1,0 +1,30 @@
+{
+  "capsule_name": "babeldoc-control-char-fix",
+  "version": "1.0.0",
+  "description": "Fix BabelDOC/pdf2zh control character issues that cause JSON parsing failures",
+  "author": "pdf-translation contributors",
+  "repository": "https://github.com/boyingliu01/pdf-translation",
+  "license": "MIT",
+  "tags": ["babeldoc", "pdf-translation", "control-characters", "fallback", "debugging", "patch"],
+  "files": [
+    "manifest.json",
+    "content/README.md",
+    "content/USAGE.md",
+    "content/pdf_translator.py",
+    "content/translate_pdf.py",
+    "content/requirements.txt",
+    "content/config/"
+  ],
+  "installation": "pip install -r requirements.txt",
+  "usage": "from pdf_translator import PDFTranslator",
+  "features": [
+    "Control character cleaning (ASCII 0-31)",
+    "Multi-model automatic fallback", 
+    "Cross-page paragraph merging",
+    "Progress callbacks"
+  ],
+  "requirements": {
+    "python": ">=3.12",
+    "packages": ["pdf2zh-next>=0.5.23", "babeldoc>=0.5.23", "pydantic", "httpx"]
+  }
+}

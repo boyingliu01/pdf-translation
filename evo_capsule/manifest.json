@@ -1,0 +1,25 @@
+{
+  "name": "babeldoc-control-char-fix",
+  "description": "Fix BabelDOC/pdf2zh control character issues that cause JSON parsing failures. Includes multi-model fallback and cross-page paragraph merging.",
+  "tags": ["babeldoc", "pdf-translation", "control-characters", "fallback", "debugging", "patch"],
+  "version": "1.0.0",
+  "author": "pdf-translation contributors",
+  "license": "MIT",
+  "repository": "https://github.com/boyingliu01/pdf-translation",
+  "requirements": ["pdf2zh-next>=0.5.23", "babeldoc>=0.5.23"],
+  "features": [
+    "Control character cleaning (ASCII 0-31)",
+    "Multi-model automatic fallback",
+    "Cross-page paragraph merging",
+    "Progress callbacks"
+  ],
+  "differentiators": {
+    "vs_pdf2zh_next_mcp": [
+      "No service required (direct Python API)",
+      "Control character handling",
+      "Multi-model fallback",
+      "Cross-page merging",
+      "Progress callbacks"
+    ]
+  }
+}
