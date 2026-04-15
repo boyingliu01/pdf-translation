@@ -1,8 +1,38 @@
 # AGENTS.md - Agent Guidelines for pdf-translation
 
-## Project Overview
+**Generated:** 2026-04-15
+**Commit:** ff54196
+**Branch:** master
 
-A Python-based PDF translation tool using pdf2zh-next and BabelDOC. Converts PDFs to bilingual versions while preserving formatting (formulas, tables, graphics). Supports multiple translation engines (ZhipuAI, VolcEngine, SiliconFlow, OpenAI) via OpenAI-compatible APIs.
+## OVERVIEW
+
+Python PDF translation tool (pdf2zh-next/BabelDOC) → bilingual PDFs. OpenAI-compatible API abstraction (ZhipuAI/OpenAI/SiliconFlow/VolcEngine).
+
+## STRUCTURE
+
+```
+pdf-translation/
+├── pdf_translator.py     # Core TranslationResult + PDFTranslator class (1128 lines)
+├── translate_pdf.py      # CLI entry (argparse, 192 lines)
+├── config/               # JSON config templates (12 files)
+├── test/                 # Standalone test scripts (18 files)
+├── docs/                 # Project documentation
+├── evo_capsule/          # Custom capsule packaging for distribution
+└── requirements.txt      # Dependencies
+```
+
+**Architecture**: Flat structure (no `src/`), intentional for CLI tool simplicity.
+
+## WHERE TO LOOK
+
+| Task | Location | Notes |
+|------|----------|-------|
+| Translation logic | `pdf_translator.py` | PDFTranslator class, async streaming |
+| CLI interface | `translate_pdf.py` | argparse, 14 CLI options |
+| Add translation engine | `config/*.json` templates | OpenAI-compatible abstraction |
+| Test new feature | `test/test_*.py` | Standalone scripts, `python test/<name>.py` |
+| Config validation | `pdf_translator.py` → `_create_settings()` | pydantic SettingsModel |
+| Progress callback | `pdf_translator.py` → `translate_pdf_async()` | Event streaming |
 
 ## Build and Test Commands
 
