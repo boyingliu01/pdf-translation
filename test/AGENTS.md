@@ -1,6 +1,6 @@
 # AGENTS.md - Test Directory Guidelines
 
-**Generated:** 2026-04-15
+**Generated:** 2026-05-05
 
 ## OVERVIEW
 
@@ -15,7 +15,9 @@ Standalone test scripts for PDF translation tool. Mixed conventions: print-based
 | Test settings creation | `test_config_creation.py` | pydantic model validation |
 | Integration tests | `test_final.py` | Custom `test()` helper |
 | JSON output tests | `test_clean_json_output.py` | Uses unittest.TestCase |
+| Doc translation | `test_translate_docs.py` | Full document translation |
 | Performance bench | `performance_test.py` | Timing metrics |
+| Example usage | `example_usage.py` | Code examples |
 | Static analysis reports | `*_report.txt` | Ruff, Mypy, Bandit, Radon |
 
 ## CONVENTIONS

@@ -1,7 +1,7 @@
 # AGENTS.md - Agent Guidelines for pdf-translation
 
-**Generated:** 2026-04-15
-**Commit:** ff54196
+**Generated:** 2026-05-05
+**Commit:** 8505f80
 **Branch:** master
 
 ## OVERVIEW
@@ -30,6 +30,7 @@ pdf-translation/
 | Translation logic | `pdf_translator.py` | PDFTranslator class, async streaming |
 | CLI interface | `translate_pdf.py` | argparse, 14 CLI options |
 | Add translation engine | `config/*.json` templates | OpenAI-compatible abstraction |
+| Multi-model fallback | `pdf_translator.py` → `FallbackTranslator` | Automatic switch on content filter |
 | Test new feature | `test/test_*.py` | Standalone scripts, `python test/<name>.py` |
 | Config validation | `pdf_translator.py` → `_create_settings()` | pydantic SettingsModel |
 | Progress callback | `pdf_translator.py` → `translate_pdf_async()` | Event streaming |
@@ -68,7 +69,7 @@ python translate_pdf.py --create-config -c config/myconfig.json
 ## Code Style Guidelines
 
 ### Environment
-- Python 3.13+
+- Python 3.12+
 - Use `pathlib.Path` for file operations (never string concatenation)
 
 ### Import Order
@@ -219,13 +220,55 @@ result = translator.translate_pdf(..., progress_callback=progress_callback)
 
 ## Available Config Templates
 
-The `config/` directory provides multiple configuration templates:
-- `config.example.json` - General configuration example
-- `config.openai.json` - OpenAI configuration template
-- `config.zhipu.json` - ZhipuAI configuration template (recommended, free tier available)
-- `config.siliconflow.json` - SiliconFlow configuration template
-- `config.volcengine.json` - VolcEngine configuration template
-- `config.test.json` - Test configuration
+The `config/` directory provides 12 JSON configuration templates:
+
+**Single-model configs:**
+- `config.example.json` - General configuration example with full options
+- `config.zhipu.json` - ZhipuAI/GLM-4-Flash (recommended, free tier available)
+- `config.openai.json` - OpenAI native
+- `config.siliconflow.json` - SiliconFlow/DeepSeek
+- `config.volcengine.json` - VolcEngine/Doubao (PRO subscription)
+- `config.bailian-only.json` - Alibaba Bailian single-provider
+- `config.foreign-only.json` - Foreign language source optimization
+- `config.test.json` - Test configuration (placeholder API key)
+
+**Multi-model / special:**
+- `config.multi-model.json` - Multi-model fallback chain configuration
+- `config.json.example` - Minimal example (mirrors active config.json)
+- `test_config.json` - Test-specific config
+
+## Multi-Model Fallback
+
+`pdf_translator.py` supports automatic model fallback on content filter errors or consecutive failures:
+
+```json
+{
+  "models": [
+    {
+      "name": "primary",
+      "api_key": "key1",
+      "base_url": "https://open.bigmodel.cn/api/paas/v4",
+      "model": "glm-4-flash"
+    },
+    {
+      "name": "backup",
+      "api_key": "key2",
+      "base_url": "https://api.openai.com/v1",
+      "model": "gpt-4o-mini"
+    }
+  ],
+  "fallback": {
+    "consecutive_failures": 3
+  }
+}
+```
+
+**Fallback triggers:**
+- `BadRequestError` (content filter) → immediate switch + retry
+- `consecutive_failures` threshold reached → switch to next model
+- Patches applied at 3 levels: OpenAITranslator, ILTranslator, ILTranslatorLLMOnly
+
+**To use single-model mode:** omit the `"models"` array and use backward-compatible top-level fields (`openai_api_key`, etc.)
 
 ## Translation Engine Abstraction
 
