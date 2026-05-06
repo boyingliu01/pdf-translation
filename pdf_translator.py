@@ -3,6 +3,8 @@ PDF Translation Tool
 基于 PDFMathTranslate-next 和 BabelDOC 的PDF翻译工具
 """
 
+__version__ = "0.1.0"
+
 import asyncio
 import json
 import logging
