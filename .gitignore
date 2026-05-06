@@ -32,9 +32,10 @@ nul
 
 # Examples (large files not for repo)
 examples/*.pdf
+!examples/sample.pdf
 examples/*.csv
 examples/output/
-examples/!README.md
+!examples/README.md
 
 # Sensitive configs
 # Keep template configs, ignore active ones with real keys
