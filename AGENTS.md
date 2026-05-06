@@ -38,32 +38,51 @@ pdf-translation/
 ## Build and Test Commands
 
 ### Installation
+
+**From source (development):**
+```bash
+pip install -e .
+# or with dev dependencies:
+pip install -e ".[dev]"
+```
+
+**Legacy (still works):**
 ```bash
 pip install -r requirements.txt
 ```
 
 ### Running Tests
-Tests are standalone Python scripts (not pytest/unittest):
+
+**pytest (recommended):**
 ```bash
-# Run a single test
+python -m pytest test/ -v
+python -m pytest test/ --cov=pdf_translator --cov=translate_pdf --cov-report=term-missing
+```
+
+**Legacy standalone scripts (deprecated):**
+```bash
 python test/test_translate.py
 python test/test_engines.py
 python test/test_config_creation.py
-
-# Run all tests (if needed)
-python test/test_translate.py && python test/test_engines.py && python test/test_config_creation.py
 ```
 
 ### Running Translations
+
+**Using installed CLI:**
 ```bash
 # Basic translation
-python translate_pdf.py -i document.pdf -o output
+pdf-translate -i document.pdf -o output
 
 # With options
-python translate_pdf.py -i doc.pdf --lang-in en --lang-out zh --pages "1-5"
+pdf-translate -i doc.pdf --lang-in en --lang-out zh --pages "1-5"
 
 # Create config template
-python translate_pdf.py --create-config -c config/myconfig.json
+pdf-translate --create-config -c config/myconfig.json
+```
+
+**Legacy direct script execution:**
+```bash
+python translate_pdf.py -i document.pdf -o output
 ```
 
 ## Code Style Guidelines
