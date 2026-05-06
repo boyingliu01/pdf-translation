@@ -1,0 +1,15 @@
+﻿{
+    "id":  "sprint-2026-05-05-01",
+    "title":  "Test framework unification: migrate standalone scripts to pytest",
+    "pause_reason":  "none",
+    "status":  "running",
+    "phase":  1,
+    "outputs":  {
+                    "specification":  "specification.yaml",
+                    "pain_document":  ".sprint-state/phase-outputs/pain-document.md"
+                },
+    "metrics":  {
+
+                },
+    "issue":  "#3"
+}
