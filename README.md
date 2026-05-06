@@ -1,5 +1,7 @@
 # PDF Translation Tool
 
+![CI](https://github.com/boyingliu01/pdf-translation/actions/workflows/ci.yml/badge.svg)
+
 A professional PDF translation tool based on [PDFMathTranslate-next](https://github.com/Byaidu/PDFMathTranslate) and [BabelDOC](https://github.com/Byaidu/BabelDOC) that converts PDF documents to bilingual (dual-language) versions while preserving original formatting including formulas, tables, and graphics.
 
 ## Features
