@@ -4,68 +4,86 @@
 
 ## OVERVIEW
 
-Standalone test scripts for PDF translation tool. Mixed conventions: print-based standalone + unittest framework.
+Unified pytest test suite for PDF translation tool. 124 tests across 6 modules. All API calls mocked — no real keys required.
 
 ## WHERE TO LOOK
 
-| Task | Location | Notes |
-|------|----------|-------|
-| Run basic tests | `test_translate.py` | Core translation flow |
-| Test engine configs | `test_engines.py` | Multi-provider testing |
-| Test settings creation | `test_config_creation.py` | pydantic model validation |
-| Integration tests | `test_final.py` | Custom `test()` helper |
-| JSON output tests | `test_clean_json_output.py` | Uses unittest.TestCase |
-| Doc translation | `test_translate_docs.py` | Full document translation |
-| Performance bench | `performance_test.py` | Timing metrics |
-| Example usage | `example_usage.py` | Code examples |
-| Static analysis reports | `*_report.txt` | Ruff, Mypy, Bandit, Radon |
+| Task | File | Notes |
+|------|------|-------|
+| Config / model tests | `test_config_creation.py` | pydantic SettingsModel, OpenAISettings |
+| Control char cleaning | `test_clean_json_output.py` | 32 parametrised control-char tests |
+| Translation core | `test_translate.py` | Async flow, fallback, TranslationResult |
+| CLI parsing | `test_cli.py` | argparse, main() success/failure paths |
+| Engine templates | `test_engines.py` | All 7 config templates validated |
+| Utility functions | `test_utils.py` | _is_incomplete_sentence, create_example_config |
+| Shared fixtures | `conftest.py` | mock_config, mock_pdf_path, mock_translator |
+| Test runner config | `pytest.ini` | Ignores legacy standalone scripts |
+| **Legacy (deprecated)** | `test_final.py` | Standalone script — excluded from pytest |
+| **Legacy (deprecated)** | `test_translate_docs.py` | Standalone script — excluded from pytest |
+| Performance bench | `performance_test.py` | Timing metrics (not part of pytest suite) |
+| Example usage | `example_usage.py` | Code examples (not part of pytest suite) |
 
 ## CONVENTIONS
 
-### Test Runner Patterns
+### Framework: pytest
 
-**Standalone Scripts (Primary)**
 ```bash
-python test/test_translate.py
-python test/test_engines.py
-```
-- Uses custom `test()` helper for pass/fail tracking
-- Print-based assertions, exit with `sys.exit(0)` or `sys.exit(1)`
+# Run all tests
+python -m pytest test/
 
-**unittest Framework**
-```bash
-pytest test/test_clean_json_output.py
-```
-- Uses `unittest.TestCase` classes with `setUp()`
+# Run with coverage
+python -m pytest test/ --cov=pdf_translator --cov=translate_pdf --cov-report=term-missing
 
-### Path Setup
-All tests add project root to path:
+# Run single file
+python -m pytest test/test_translate.py -v
+
+# Run single test
+python -m pytest test/test_translate.py::TestFallbackTranslator::test_fallback_exhausted -v
+```
+
+### Fixture Reuse
+
+Shared fixtures in `conftest.py`:
+- `mock_config` — minimal valid translator config dict
+- `mock_pdf_path` — tmp_path PDF that actually exists (needed for translate_pdf_async)
+- `mock_translator` — PDFTranslator instance with mock config
+- `mock_translation_result` — MagicMock with all result attributes
+- `mock_translate_stream` — async generator yielding progress + finish events
+
+### Mocking Rules
+
+- **API calls**: always mock (monkeypatch / unittest.mock.patch)
+- **File system**: use `tmp_path` fixture for real files, `tmp_path` / `monkeypatch` for dirs
+- **Async streams**: patch `pdf_translator.do_translate_async_stream` with async generator
+
+### Writing New Tests
+
 ```python
-sys.path.insert(0, str(Path(__file__).parent.parent))
+def test_something(mock_translator, mock_pdf_path):
+    """Use fixtures from conftest.py, assert with plain assert."""
+    settings = mock_translator._create_settings(
+        input_pdf=str(mock_pdf_path), output_dir="./out"
+    )
+    assert settings.translation.lang_in == "en"
 ```
-
-### Test Config
-- Uses `config/config.test.json` with placeholder API key
-- Skip file validation: `settings.basic.input_files = set()`
 
 ## ANTI-PATTERNS
 
-- **NO pytest.ini / coverage config** - Manual static analysis only
-- **NO mocking** - Real API calls in some tests (may timeout)
-- **Mixed frameworks** - Inconsistent test patterns
+- **Do NOT** add `sys.path.insert(0, ...)` in test files — handled by `conftest.py`
+- **Do NOT** use `print()` for assertions — use `assert` + pytest
+- **Do NOT** call real APIs — always mock external services
+- **Do NOT** commit tests that require real `config/config.json`
 
 ## COMMANDS
 
 ```bash
-# Run standalone tests
-python test/test_translate.py
-python test/test_engines.py
-python test/test_config_creation.py
+# Full test suite
+python -m pytest test/ -v
 
-# Run with pytest (unittest files)
-pytest test/test_clean_json_output.py
+# Coverage check
+python -m pytest test/ --cov=pdf_translator --cov=translate_pdf --cov-report=term-missing
 
-# Static analysis (generate reports)
+# Static analysis
 python -m ruff check pdf_translator.py translate_pdf.py
 python -m mypy pdf_translator.py translate_pdf.py --ignore-missing-imports
 python -m bandit -r pdf_translator.py translate_pdf.py -f txt
@@ -74,6 +92,7 @@ python -m radon cc pdf_translator.py -a
 
 ## NOTES
 
-- Tests use Chinese docstrings (acceptable)
-- `test_engines.py` requires real API keys for full execution
-- Reports in `test/` are generated by static analysis tools
+- 124 tests, 0 failures, all offline
+- Coverage: ~54% (patches for BabelDOC internals and PyMuPDF page numbering not unit-testable)
+- Tests run in ~5 seconds
+- `pytest.ini` excludes legacy scripts (`test_final.py`, `example_usage.py`, `performance_test.py`, `test_translate_docs.py`)

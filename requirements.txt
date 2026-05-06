@@ -21,3 +21,8 @@ asyncio
 
 # 打包工具
 pyinstaller>=6.0.0
+
+# 测试
+pytest>=8.0.0
+pytest-cov>=5.0.0
+pytest-asyncio>=0.23.0

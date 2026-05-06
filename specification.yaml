@@ -1,0 +1,49 @@
+id: sprint-2026-05-05-01
+phase: 2
+title: "Test framework unification: migrate standalone scripts to pytest"
+pain_document: ".sprint-state/phase-outputs/pain-document.md"
+
+requirements:
+  - "Migrate all test/ scripts from mixed standalone/unittest to unified pytest"
+  - "python -m pytest test/ exits with code 0"
+  - "All API calls mocked — tests run without real API keys"
+  - "Coverage > 80% for pdf_translator.py and translate_pdf.py"
+  - "Eliminate manual sys.path hacks via conftest.py"
+  - "Keep backward compatibility: old `python test/test_*.py` still works during migration"
+
+scope:
+  in:
+    - "test/ directory (8 test scripts)"
+    - "conftest.py with shared fixtures"
+    - "pytest.ini / pyproject.toml [tool.pytest.ini_options]"
+    - "requirements.txt (add pytest, pytest-cov)"
+    - "Mock patches for API-dependent tests"
+  out:
+    - "No changes to pdf_translator.py or translate_pdf.py business logic"
+    - "No changes to config/ templates"
+    - "No CI/CD workflow (Issue #4)"
+    - "No pyproject.toml full packaging (Issue #1)"
+
+acceptance_criteria:
+  - "pytest test/ passes (all green)"
+  - "pytest --cov=pdf_translator --cov=translate_pdf --cov-report=term-missing shows >80%"
+  - "Tests run offline (no network calls)"
+  - "No sys.path.insert(0, ...) in any test file"
+  - "AGENTS.md test section updated with pytest commands"
+
+migration_order:
+  1: "test_config_creation.py (simplest, no external deps)"
+  2: "test_clean_json_output.py (already unittest, easy convert)"
+  3: "test_translate.py (needs mocking for PDF translation)"
+  4: "test_engines.py (needs heavy mocking for API calls)"
+  5: "test_final.py, test_translate_docs.py, example_usage.py"
+
+risk:
+  - "Mocking too aggressively may mask real integration bugs"
+  - "Coverage target may be hard if some code paths require real PDF processing"
+  - "Backward compatibility break if old scripts removed before pytest works"
+
+mitigation:
+  - "Keep old scripts until pytest suite fully passes, then delete"
+  - "Use monkeypatch for API mocking, not global stubs"
+  - "Add integration test that uses a minimal real PDF for core paths"
