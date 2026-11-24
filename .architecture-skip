@@ -1,0 +1,24 @@
+# Gate 6 (Architecture + Boy Scout) exemption.
+#
+# Why this project has no architecture.yaml
+# ----------------------------------------
+# pdf-translation is a flat two-module CLI, not a layered application:
+#
+#   pdf_translator.py   the translation engine
+#   translate_pdf.py    the CLI entry point
+#   test/               pytest suite
+#
+# There are no layers to order, no cross-layer imports to forbid, and no
+# acyclic-dependency property worth asserting: `translate_pdf.py` imports
+# `pdf_translator.py` and nothing else does. Writing a layers file here would
+# be ceremony that enforces nothing while making Gate 6 report green -- the
+# exact "taught users to write a file that bought them nothing" failure the
+# gate's own hint warns about (xp-gate #686).
+#
+# Gate 6's layer-boundary enforcement is also inert in archlint 0.16.0, so even
+# a correct-looking file would not be checked. This exemption records "not
+# applicable" rather than pretending otherwise.
+#
+# Revisit if the project ever grows real modules with a direction of dependency
+# (e.g. engines/, config/, cli/ with imports that must not point back upward).
+# At that point delete this file and add architecture.yaml.

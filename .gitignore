@@ -40,9 +40,21 @@ examples/output/
 # Sensitive configs
 # Keep template configs, ignore active ones with real keys
 config/config.json
+# Local override profiles carry a real API key (config.local-qwen.json holds
+# `openai_api_key` in plaintext). `config/config.json` alone does not cover
+# them, so they stay one `git add -A` away from being committed.
+config/*.local-*.json
+config/*.local.json
+# A2A publish handshake payloads echo the sender config; never needed in git.
+publish_request.json
 
 # Internal documentation (not for public)
 docs/OPEN_SOURCE_SUMMARY.md
 docs/internal/
 docs/superpowers/
 .tmp_pdf_compare/
+
+# xp-gate gate artifacts (regenerated on every run)
+.xp-gate/
+.quality-history.jsonl
+.code-walkthrough-result.json
