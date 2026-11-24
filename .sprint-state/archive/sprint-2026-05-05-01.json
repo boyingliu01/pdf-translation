@@ -1,4 +1,4 @@
-﻿{
+{
     "id":  "sprint-2026-05-05-01",
     "title":  "Test framework unification: migrate standalone scripts to pytest",
     "pause_reason":  "none",
